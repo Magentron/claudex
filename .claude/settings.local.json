@@ -31,7 +31,16 @@
       "Bash(yarn tsc:*)",
       "Bash(yarn eslint:*)",
       "Bash(env FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 MOCK_OPENAI=true yarn jest:*)",
-      "Bash(env FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 MOCK_OPENAI=true NODE_OPTIONS='--experimental-vm-modules' yarn jest:*)"
+      "Bash(env FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 MOCK_OPENAI=true NODE_OPTIONS='--experimental-vm-modules' yarn jest:*)",
+      "Bash(FIRESTORE_EMULATOR_HOST=localhost:8080 yarn test conversational-agent-langgraph)",
+      "Read(//Users/maikel/Workspace/Pelago/voiced/.bmad-core/tasks/**)",
+      "Bash(chmod +x /Users/maikel/Workspace/Pelago/voiced/pelago/apps/voiced/functions/deploy-memory-metrics-simple.sh)",
+      "Read(//Users/maikel/Workspace/Pelago/voiced/simulator/src/**)",
+      "Read(//Users/maikel/Workspace/Pelago/voiced/simulator/**)",
+      "Bash(yarn workspace:*)",
+      "Bash(env FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 yarn test:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)"
     ],
     "deny": [],
     "ask": []

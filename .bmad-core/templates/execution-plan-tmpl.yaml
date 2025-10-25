@@ -6,7 +6,7 @@ template:
   output:
     format: markdown
     filename: docs/execution-plan.md
-    title: "{{feature_name}} Execution Plan"
+    title: '{{feature_name}} Execution Plan'
 
 workflow:
   mode: interactive
@@ -16,14 +16,18 @@ sections:
   - id: introduction
     title: Introduction
     instruction: |
-      Review any provided relevant documents (PRD, architecture, user stories, etc.) to gather all context.
+      CRITICAL WORKFLOW NOTICE: This section should only be created AFTER completing Phase 1 (Mandatory Clarification Phase).
 
-      CRITICAL: Before proceeding with document creation:
-      1. Use context7 MCP to query up-to-date documentation for any libraries, SDKs, frameworks, third-party services, or vendors mentioned
-      2. Use sequential-thinking MCP when analyzing complex subjects or considering multiple alternatives
-      3. Ask the user to clarify ANY unclear requirements, technical decisions, or implementation approaches
-      4. DO NOT produce document sections containing alternatives, options, or rationale discussions
-      5. Documents must contain ONLY the final decisions after all questions are resolved
+      If you have not yet completed Phase 1, STOP and return to the clarification phase:
+      1. Acknowledge the user's request
+      2. Gather context from relevant documents
+      3. Query documentation via context7 MCP
+      4. Use sequential-thinking MCP for complex analysis
+      5. Ask ALL clarifying questions
+      6. Summarize final decisions
+      7. Get explicit user approval to proceed
+
+      ONLY after Phase 1 is complete should you create this introduction section.
     sections:
       - id: intro-content
         content: |
@@ -76,9 +80,9 @@ sections:
           List all files affected by this implementation.
           Change Type should be: Create, Modify, Delete, or Refactor
         examples:
-          - "| src/services/user-service.ts | Modify | Add new method for user preference updates |"
-          - "| src/models/user-preference.ts | Create | New model for user preferences |"
-          - "| src/api/routes/user-routes.ts | Modify | Add new endpoint for preference management |"
+          - '| src/services/user-service.ts | Modify | Add new method for user preference updates |'
+          - '| src/models/user-preference.ts | Create | New model for user preferences |'
+          - '| src/api/routes/user-routes.ts | Modify | Add new endpoint for preference management |'
 
   - id: test-and-eval-strategy
     title: Test Suite and/or Evals Suite Definition
@@ -202,7 +206,7 @@ sections:
     repeatable: true
     sections:
       - id: file-implementation
-        title: "{{file_path}}"
+        title: '{{file_path}}'
         repeatable: true
         template: |
           **Change Type:** {{change_type}}

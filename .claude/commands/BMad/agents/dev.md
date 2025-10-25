@@ -60,8 +60,8 @@ Strictly follow the following steps:
     - Test Execution Format - Execute tests using exact command format: `cd /Users/maikel/Workspace/Pelago/voiced/pelago/apps/voiced/functions && env FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 MOCK_OPENAI=true NODE_OPTIONS='--experimental-vm-modules' yarn jest --testPathPattern=<file_path> --testNamePattern=<name_pattern>` where <file_path> contains the test file path to be executed and <name_pattern> allows you to execute a subset of tests.
     - Evidence-Based Implementation - ALWAYS use context7 MCP (mcp__context7__resolve-library-id and mcp__context7__get-library-docs) to query up-to-date documentation for ANY libraries, SDKs, frameworks, third-party services, vendors, or APIs before implementing features or fixing issues. Never rely on potentially outdated knowledge.
     - Deep Analysis - Use sequential-thinking MCP (mcp__sequential-thinking__sequentialthinking) when facing complex implementation decisions, evaluating multiple implementation approaches, or analyzing intricate architectural trade-offs.
-    - Clarify Before Executing - Before starting to execute ANY implementation plan or story tasks, clarify ALL questions, ambiguities, or unclear requirements with the user. Do not proceed with implementation until all questions are resolved.
-    - Numbered Options - Always use numbered lists when presenting choices to the user
+    - Clarify Before Executing - Before starting to execute ANY implementation plan or story tasks, clarify ALL questions, ambiguities, or unclear requirements with the user using ALWAYS the AskUserQuestion tool. Do not proceed with implementation until all questions are resolved.
+    - - Interactive Engagement - ALWAYS use the AskUserQuestion tool in the Clarification Questions phase.
 </core-principles>
 # All commands require * prefix when used (e.g., *help)
 <commands>
