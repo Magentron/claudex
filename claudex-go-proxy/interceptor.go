@@ -20,24 +20,26 @@ type PatternRule struct {
 
 // Interceptor handles I/O interception with pattern matching
 type Interceptor struct {
-	logFile       *os.File
-	inputBuffer   *bytes.Buffer
-	outputBuffer  *bytes.Buffer
-	inputRules    []PatternRule // Rules checked on ENTER
-	outputRules   []PatternRule // Rules checked continuously on output
-	inEscapeSeq   bool          // Track if we're in the middle of an ANSI escape sequence
-	lastEnterByte byte          // Store the last ENTER byte pressed (for replaying)
-	ptyWriter     io.Writer     // Writer to send input to Claude's PTY
+	logFile        *os.File
+	inputBuffer    *bytes.Buffer
+	outputBuffer   *bytes.Buffer
+	inputRules     []PatternRule   // Rules checked on ENTER
+	outputRules    []PatternRule   // Rules checked continuously on output
+	inEscapeSeq    bool            // Track if we're in the middle of an ANSI escape sequence
+	lastEnterByte  byte            // Store the last ENTER byte pressed (for replaying)
+	ptyWriter      io.Writer       // Writer to send input to Claude's PTY
+	triggeredRules map[string]bool // Track which output rules have been triggered
 }
 
 // NewInterceptor creates a new interceptor
 func NewInterceptor(logFile *os.File) *Interceptor {
 	return &Interceptor{
-		logFile:      logFile,
-		inputBuffer:  new(bytes.Buffer),
-		outputBuffer: new(bytes.Buffer),
-		inputRules:   make([]PatternRule, 0),
-		outputRules:  make([]PatternRule, 0),
+		logFile:        logFile,
+		inputBuffer:    new(bytes.Buffer),
+		outputBuffer:   new(bytes.Buffer),
+		inputRules:     make([]PatternRule, 0),
+		outputRules:    make([]PatternRule, 0),
+		triggeredRules: make(map[string]bool),
 	}
 }
 
@@ -256,12 +258,24 @@ func (i *Interceptor) HandleOutput(src io.Reader, dst io.Writer) error {
 		// Check for patterns in output
 		outputStr := i.outputBuffer.String()
 		for _, rule := range i.outputRules {
+			patternKey := rule.Pattern.String()
 			if rule.Pattern.MatchString(outputStr) {
+				// Check if this rule has already been triggered (prevent infinite loops)
+				if i.triggeredRules[patternKey] {
+					if i.logFile != nil {
+						fmt.Fprintf(i.logFile, "[CLAUDEX OUTPUT] Pattern %s already triggered, skipping\n", patternKey)
+					}
+					continue
+				}
+
+				// Mark as triggered
+				i.triggeredRules[patternKey] = true
+
 				// Execute action for output patterns
 				rule.Action(outputStr, dst)
 
 				if i.logFile != nil {
-					fmt.Fprintf(i.logFile, "\n[CLAUDEX OUTPUT] Pattern detected: %s\n", rule.Pattern.String())
+					fmt.Fprintf(i.logFile, "\n[CLAUDEX OUTPUT] Pattern detected: %s\n", patternKey)
 				}
 
 				// Clear the pattern from buffer to avoid re-triggering

@@ -45,9 +45,39 @@
       "Read(//Users/maikel/Workspace/Pelago/bmad/**)",
       "Bash(npm view:*)",
       "Bash(node:*)",
-      "Bash(FIRESTORE_EMULATOR_HOST=localhost:8080 NODE_OPTIONS='--experimental-vm-modules' yarn jest:*)"
+      "Bash(FIRESTORE_EMULATOR_HOST=localhost:8080 NODE_OPTIONS='--experimental-vm-modules' yarn jest:*)",
+      "Read(//Users/maikel/Workspace/Pelago/voiced/**)",
+      "Bash(cp:*)",
+      "Bash(npx license-checker-rseidelsohn:*)",
+      "Bash(/Users/maikel/Workspace/Pelago/voiced/pelago/compliance/licenses/licenses.voiced-functions.json)",
+      "Bash(cloc:*)",
+      "Bash(awk:*)",
+      "Bash(make clean:*)",
+      "Bash(make build:*)"
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/maikel/Workspace/Pelago/bmad/.claude/hooks/session-end.sh"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/maikel/Workspace/Pelago/bmad/.claude/hooks/subagent-stop.sh"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -16,6 +16,16 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/maikel/Workspace/Pelago/bmad/.claude/hooks/subagent-stop.sh"
+          }
+        ]
+      }
     ]
   }
 }
