@@ -3,10 +3,11 @@
 ## Task Status
 
 ### 🚀 In Progress
-- **Enforce Session-Scoped Documentation**: Update all profiles and agents to ensure documentation output is always created within the session's folder, not in the root project or arbitrary locations
+- **Automatic Documentation Updates via PostToolUse Hook**: Implement background process triggered after every tool execution that captures output to keep session documentation current and synchronized with progress
 
 ### 📋 ToDo
-- **Refine Team Lead Agent Context Passing**: Ensure Team Lead agent always passes complete context to delegated agents, including pointers to relevant files and directories, so agents don't need to re-search the codebase or internet
+- **Profile Composition Engine**:
+
 
 ---
 
@@ -26,6 +27,8 @@ Execute `claude` directly in the session directory to give it focused access to 
 
 ### Session Management (Core)
 - [x] **Dashboard / TUI**: Terminal UI for managing the lifecycle.
+- [x] **Refine Team Lead Agent Context Passing**: Ensure Team Lead agent always passes complete context to delegated agents.
+- [x] **Enforce Session-Scoped Documentation**: Update all profiles and agents to ensure documentation output is always created within the session's folder.
 - [x] **Create New Session**:
   - [x] Input description
   - [x] Auto-generate session slug (via Claude)
@@ -91,6 +94,15 @@ Execute `claude` directly in the session directory to give it focused access to 
 - [ ] **Context Refresh**:
   - [ ] **`/reload-context`**: Refresh session context without losing state.
   - [ ] **`/exit` hook**: Summarize session upon exit.
+- [ ] **Automatic Documentation Updates**:
+  - [ ] **`PostToolUse` hook**: Background process triggered after every tool execution
+  - [ ] Captures tool execution output to keep session documentation current
+  - [ ] Ensures documentation stays synchronized with session progress
+- [ ] **Automatic Execution Plan Tracking** *(Needs Discovery)*:
+  - [ ] Background process to keep execution plan documents up-to-date
+  - [ ] Track multi-phase plans (Phase 1, Phase 2, etc.) with task checklists
+  - [ ] Automatically update task status as agents make progress
+  - [ ] Discovery needed: trigger conditions, update frequency, integration points
 
 ### Infrastructure & Installation
 - [x] **Installer Script**:
