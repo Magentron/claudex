@@ -1,5 +1,15 @@
 # Claudex Development Notes
 
+## Task Status
+
+### 🚀 In Progress
+- None currently
+
+### 📋 ToDo
+- **Enforce Session-Scoped Documentation**: Update all profiles and agents to ensure documentation output is always created within the session's folder, not in the root project or arbitrary locations
+
+---
+
 ## Overview
 This document tracks feature ideas, architectural decisions, and implementation notes for the Claudex framework.
 

@@ -24,12 +24,39 @@ Alternatively, you can use the standalone installation script:
 
 ### What Gets Installed
 
-The installer creates a symbolic link from BMad's `.claude` directory to your project. This gives you access to:
+The installer creates a symbolic link from BMad's `.claude` directory to your project. Additionally, it sets up symbolic links for agent profiles to ensure single-source-of-truth management.
 
+**Main Installation:**
+- Symlinks `.claude` directory to your project
+- Installs `claudex` binary to `/usr/local/bin` for global access
+
+**Agent Profiles:**
+The installer automatically creates symbolic links from various locations to the master profiles in `claudex-go/profiles/`:
+- `prompt-engineer` - 2 symlinks
+- `team-lead-new` - 1 symlink
+- `researcher` - 2 symlinks
+- `architect` - 3 symlinks
+- `infra-devops-platform` - 2 symlinks
+
+This means you can edit agent profiles in one place (`claudex-go/profiles/`) and all references are automatically updated.
+
+**Claudex Binary:**
+The `claudex` binary is installed to `/usr/local/bin` and can be called from anywhere:
+```bash
+claudex [command] [options]
+```
+
+The installer also creates a `.profiles` symlink in `/usr/local/bin` that points to the agent profiles directory, ensuring the binary can find its profiles regardless of where it's called from.
+
+Note: Installing to `/usr/local/bin` may require sudo privileges.
+
+**Available Agents:**
 - **Team Lead Agent** - Strategic planning and team orchestration
 - **Principal Architect** - System design and architecture decisions
 - **Principal TypeScript Engineer** - Implementation and code execution
 - **Infrastructure/DevOps Agent** - Platform and deployment design
+- **Researcher Agent** - Deep analysis and investigation
+- **Prompt Engineer Agent** - Prompt design and optimization
 
 ### Handling Existing `.claude` Directories
 
@@ -94,8 +121,12 @@ Or using the script:
 ```
 
 The uninstaller will:
-1. Remove the BMad symlink
-2. Restore your original `.claude` directory if a backup exists
+1. Remove all agent profile symbolic links
+2. Remove the `claudex` binary from `/usr/local/bin`
+3. Remove the BMad symlink
+4. Restore your original `.claude` directory if a backup exists
+
+Note: Removing the `claudex` binary may require sudo privileges.
 
 ## Troubleshooting
 

@@ -85,7 +85,68 @@ if [[ ! "$LINK_TARGET" =~ /.claude$ ]]; then
     exit 1
 fi
 
-# Remove the symlink
+# Remove agent profile symbolic links first
+info "Removing agent profile symbolic links..."
+
+BMAD_CLAUDE=$(readlink "$CLAUDE_PATH")
+
+# Define the agent profile links to remove (relative paths within BMad installation)
+PROFILE_LINKS=(
+    "agents/prompt-engineer.md"
+    "commands/BMad/agents/prompt-engineer.md"
+    "commands/BMad/agents/team-lead-new.md"
+    "agents/researcher.md"
+    "commands/BMad/agents/researcher.md"
+    "agents/architect.md"
+    "commands/BMad/agents/architect.md"
+    "../.bmad-core/agents/architect.md"
+    "../.bmad-infrastructure-devops/agents/infra-devops-platform.md"
+    "commands/bmadInfraDevOps/agents/infra-devops-platform.md"
+)
+
+# Remove each symbolic link
+for link_rel in "${PROFILE_LINKS[@]}"; do
+    LINK_PATH="$BMAD_CLAUDE/$link_rel"
+    
+    # Check if it's a symbolic link and remove it
+    if [ -L "$LINK_PATH" ]; then
+        rm -f "$LINK_PATH"
+    fi
+done
+
+success "Agent profile symbolic links removed"
+
+# Remove claudex binary and profiles from PATH
+info "Removing claudex binary from PATH..."
+
+INSTALL_DIR="/usr/local/bin"
+CLAUDEX_PATH="$INSTALL_DIR/claudex"
+PROFILES_PATH="$INSTALL_DIR/.profiles"
+
+if [ -L "$CLAUDEX_PATH" ] || [ -L "$PROFILES_PATH" ]; then
+    # Check if we have write permission
+    if [ -w "$INSTALL_DIR" ]; then
+        [ -L "$CLAUDEX_PATH" ] && rm -f "$CLAUDEX_PATH"
+        [ -L "$PROFILES_PATH" ] && rm -f "$PROFILES_PATH"
+        success "Claudex binary and profiles removed"
+    else
+        # Need sudo for removal
+        if sudo -v; then
+            [ -L "$CLAUDEX_PATH" ] && sudo rm -f "$CLAUDEX_PATH"
+            [ -L "$PROFILES_PATH" ] && sudo rm -f "$PROFILES_PATH"
+            success "Claudex binary and profiles removed"
+        else
+            warning "Failed to remove claudex (requires sudo)"
+            warning "You can manually remove them with:"
+            warning "  sudo rm $CLAUDEX_PATH"
+            warning "  sudo rm $PROFILES_PATH"
+        fi
+    fi
+elif [ -e "$CLAUDEX_PATH" ]; then
+    warning "Claudex exists but is not a symlink, skipping removal"
+fi
+
+# Remove the main .claude symlink
 info "Removing BMad symlink..."
 rm "$CLAUDE_PATH"
 success "Symlink removed"

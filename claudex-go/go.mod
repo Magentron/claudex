@@ -1,4 +1,4 @@
-module claudex-session
+module claudex
 
 go 1.21
 
