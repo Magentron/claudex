@@ -3,10 +3,10 @@
 ## Task Status
 
 ### 🚀 In Progress
-- None currently
+- **Enforce Session-Scoped Documentation**: Update all profiles and agents to ensure documentation output is always created within the session's folder, not in the root project or arbitrary locations
 
 ### 📋 ToDo
-- **Enforce Session-Scoped Documentation**: Update all profiles and agents to ensure documentation output is always created within the session's folder, not in the root project or arbitrary locations
+- **Refine Team Lead Agent Context Passing**: Ensure Team Lead agent always passes complete context to delegated agents, including pointers to relevant files and directories, so agents don't need to re-search the codebase or internet
 
 ---
 
@@ -36,6 +36,7 @@ Execute `claude` directly in the session directory to give it focused access to 
 - [x] **Fork Session**:
   - [x] Clone session folder and artifacts
   - [x] Create new independent session
+  - [ ] Allow user to enter a new description for the forked session
 - [x] **Ephemeral Session**:
   - [x] Run Claude without persistent storage/history
 
@@ -57,6 +58,8 @@ Execute `claude` directly in the session directory to give it focused access to 
 
 - [ ] **Standard Agent Library (Built-in)**:
   - [ ] **Team Lead**: Orchestrator. Focus on delegation and **Aggressive Parallelization**.
+    - [ ] **Context Passing**: Always pass complete context to delegated agents (files, directories, research findings)
+    - [ ] **Avoid Redundant Search**: Agents should not need to re-search codebase/internet for information Team Lead already has
   - [ ] **Researcher**: Current `architect-assistant`. Analyst. Focus on deep research (code/docs) and producing **Research Documents**.
   - [ ] **Architect**: Planner. Focus on creating **Execution Plans** based on Researcher output.
     - Review .bmad-core/templates/execution-plan-tmpl.yaml to make it more concise

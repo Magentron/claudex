@@ -63,6 +63,17 @@
     "ask": []
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/maikel/Workspace/Pelago/bmad/.claude/hooks/inject-session-context.sh"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

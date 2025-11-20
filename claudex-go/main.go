@@ -18,6 +18,73 @@ import (
 	"github.com/google/uuid"
 )
 
+// buildSystemPromptWithSessionContext injects session context into the system prompt
+// to ensure all agents follow session folder documentation rules.
+func buildSystemPromptWithSessionContext(profileContent []byte, sessionPath string) (string, error) {
+	// Skip injection for ephemeral sessions (empty sessionPath)
+	if sessionPath == "" {
+		return string(profileContent), nil
+	}
+
+	// List files in session directory (excluding hidden files starting with '.')
+	entries, err := os.ReadDir(sessionPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read session directory: %w", err)
+	}
+
+	// Build file listing
+	var files []string
+	for _, entry := range entries {
+		name := entry.Name()
+		// Skip hidden files (starting with '.')
+		if !strings.HasPrefix(name, ".") {
+			files = append(files, name)
+		}
+	}
+
+	var filesDisplay string
+	if len(files) == 0 {
+		filesDisplay = "- (No files yet - you'll be the first to create documentation!)"
+	} else {
+		// Format as bullet list
+		for _, f := range files {
+			filesDisplay += fmt.Sprintf("- %s\n", f)
+		}
+		filesDisplay = strings.TrimSuffix(filesDisplay, "\n")
+	}
+
+	// Build session context template (from inject-session-context.sh lines 108-136)
+	sessionContext := fmt.Sprintf(`## SESSION CONTEXT (CRITICAL)
+
+You are working within an active Claudex session. ALL documentation, plans, and artifacts MUST be created in the session folder.
+
+**Session Folder (Absolute Path)**: `+"`%s`"+`
+
+### MANDATORY RULES for Documentation:
+1. ✅ ALWAYS save documentation to the session folder above
+2. ✅ Use absolute paths when creating files (Write/Edit tools)
+3. ✅ Before exploring the codebase, check the session folder for existing context
+4. ❌ NEVER save documentation to project root or arbitrary locations
+5. ❌ NEVER use relative paths for documentation files
+
+### Session Folder Contents:
+%s
+
+### Recommended File Names:
+- Research documents: `+"`research-{topic}.md`"+`
+- Execution plans: `+"`execution-plan-{feature}.md`"+`
+- Analysis reports: `+"`analysis-{component}.md`"+`
+- Technical specs: `+"`technical-spec-{feature}.md`"+`
+
+---
+
+`, sessionPath, filesDisplay)
+
+	// Concatenate session context with profile content
+	combinedPrompt := sessionContext + "\n" + string(profileContent)
+	return combinedPrompt, nil
+}
+
 func main() {
 	projectDir, err := os.Getwd()
 	if err != nil {
@@ -256,8 +323,15 @@ func main() {
 		// Small delay before launching
 		time.Sleep(300 * time.Millisecond)
 
+		// Inject session context into system prompt
+		systemPrompt, err := buildSystemPromptWithSessionContext(newSessionProfileContent, fm.sessionPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not inject session context: %v\n", err)
+			systemPrompt = string(newSessionProfileContent) // Fallback to original
+		}
+
 		// Launch the Claude session with --session-id and system prompt
-		launchCmd := exec.Command("claude", "--session-id", claudeSessionID, "--system-prompt", string(newSessionProfileContent), "load activation files")
+		launchCmd := exec.Command("claude", "--session-id", claudeSessionID, "--system-prompt", systemPrompt, "load activation files")
 		launchCmd.Stdin = os.Stdin
 		launchCmd.Stdout = os.Stdout
 		launchCmd.Stderr = os.Stderr
@@ -371,7 +445,14 @@ func main() {
 		// Step 1: Start Claude session and capture session ID
 		fmt.Printf("🔄 Initializing Claude session...\n\n")
 
-		initCmd := exec.Command("claude", "--system-prompt", string(profileContent), "-p", "hello", "--output-format", "json")
+		// Inject session context into system prompt
+		systemPrompt, err := buildSystemPromptWithSessionContext(profileContent, fm.sessionPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not inject session context: %v\n", err)
+			systemPrompt = string(profileContent) // Fallback to original
+		}
+
+		initCmd := exec.Command("claude", "--system-prompt", systemPrompt, "-p", "hello", "--output-format", "json")
 		initCmd.Stderr = os.Stderr
 
 		output, err := initCmd.Output()
