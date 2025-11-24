@@ -678,33 +678,23 @@ func getSessions(sessionsDir string) ([]sessionItem, error) {
 
 func getProfiles(profilesDir string) ([]string, error) {
 	var profiles []string
-	seen := make(map[string]bool)
 
-	// 1. Legacy profiles (root)
-	entries, err := os.ReadDir(profilesDir)
-	if err == nil {
-		for _, entry := range entries {
-			name := entry.Name()
-			if !entry.IsDir() && !strings.HasPrefix(name, "common.md") && !strings.HasPrefix(name, "_") && !strings.HasPrefix(name, ".") {
-				profiles = append(profiles, name)
-				seen[name] = true
-			}
+	// Look for profiles in agents/ directory
+	agentsDir := filepath.Join(profilesDir, "agents")
+	entries, err := os.ReadDir(agentsDir)
+	if err != nil {
+		// If agents directory doesn't exist, return empty list
+		if os.IsNotExist(err) {
+			return []string{}, nil
 		}
+		return nil, err
 	}
 
-	// 2. Roles (roles/)
-	rolesDir := filepath.Join(profilesDir, "roles")
-	roleEntries, err := os.ReadDir(rolesDir)
-	if err == nil {
-		for _, entry := range roleEntries {
-			name := entry.Name()
-			if !entry.IsDir() && !strings.HasPrefix(name, ".") {
-				// Avoid duplicates if same name exists in both (legacy takes precedence? or we just list unique)
-				if !seen[name] {
-					profiles = append(profiles, name)
-					seen[name] = true
-				}
-			}
+	for _, entry := range entries {
+		name := entry.Name()
+		// Skip directories and hidden files
+		if !entry.IsDir() && !strings.HasPrefix(name, ".") {
+			profiles = append(profiles, name)
 		}
 	}
 
@@ -868,112 +858,20 @@ func renameSessionWithClaudeID(oldPath, sessionName, claudeSessionID string) (st
 }
 
 func loadProfile(profilesDir, profileName string) ([]byte, error) {
-	// 1. Try legacy path directly in profilesDir
-	legacyPath := filepath.Join(profilesDir, profileName)
-	if _, err := os.Stat(legacyPath); err == nil {
-		return os.ReadFile(legacyPath)
-	}
-
-	// 2. Try roles path
-	rolePath := filepath.Join(profilesDir, "roles", profileName)
-	if _, err := os.Stat(rolePath); err == nil {
-		// Found a role! Load common + role
-		commonPath := filepath.Join(profilesDir, "common.md")
-		commonContent, err := os.ReadFile(commonPath)
-		if err != nil {
-			// It's okay if common doesn't exist, just warn or skip
-			// But for now let's assume it exists if we are using roles
-			// fmt.Fprintf(os.Stderr, "Warning: common.md not found: %v\n", err)
-		}
-
-		roleContent, err := os.ReadFile(rolePath)
-		if err != nil {
-			return nil, err
-		}
-
-		// Combine: Common first, then Role
-		// We use a separator to ensure clean markdown rendering
-		var combined []byte
-		if len(commonContent) > 0 {
-			combined = append(combined, commonContent...)
-			combined = append(combined, []byte("\n\n---\n\n")...)
-		}
-
-		// Parse frontmatter from roleContent to find skills
-		skills, cleanRoleContent := parseSkillsFromFrontmatter(roleContent)
-		combined = append(combined, cleanRoleContent...)
-
-		// Load Skills
-		if len(skills) > 0 {
-			combined = append(combined, []byte("\n\n# Skills\n")...)
-			for _, skill := range skills {
-				skillPath := filepath.Join(profilesDir, "skills", skill+".md")
-				if skillContent, err := os.ReadFile(skillPath); err == nil {
-					combined = append(combined, []byte(fmt.Sprintf("\n## %s\n\n", skill))...)
-					combined = append(combined, skillContent...)
-				} else {
-					// Warn but continue
-					fmt.Fprintf(os.Stderr, "Warning: skill not found: %s\n", skill)
-				}
-			}
-		}
-
-		return combined, nil
+	// Look for profile in agents/ directory
+	agentPath := filepath.Join(profilesDir, "agents", profileName)
+	if _, err := os.Stat(agentPath); err == nil {
+		return os.ReadFile(agentPath)
 	}
 
 	return nil, fmt.Errorf("profile not found: %s", profileName)
 }
 
-func parseSkillsFromFrontmatter(content []byte) ([]string, []byte) {
-	str := string(content)
-	if !strings.HasPrefix(str, "---") {
-		return nil, content
-	}
-
-	// Find end of frontmatter
-	end := strings.Index(str[3:], "---")
-	if end == -1 {
-		return nil, content
-	}
-	end += 3 // Adjust for the first --- skipping
-
-	frontmatter := str[3:end]
-	body := str[end+3:] // Skip the closing ---
-
-	var skills []string
-	lines := strings.Split(frontmatter, "\n")
-	inSkills := false
-
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "skills:" {
-			inSkills = true
-			continue
-		}
-		if inSkills {
-			if strings.HasPrefix(trimmed, "- ") {
-				skill := strings.TrimSpace(strings.TrimPrefix(trimmed, "- "))
-				skills = append(skills, skill)
-			} else if trimmed != "" && !strings.HasPrefix(line, " ") && !strings.HasPrefix(line, "\t") {
-				// Dedent/New key -> exit skills block
-				inSkills = false
-			}
-		}
-	}
-
-	return skills, []byte(strings.TrimSpace(body))
-}
-
 func resolveProfilePath(profilesDir, profileName string) string {
-	// Helper to find the file containing the description (main role file)
-	legacyPath := filepath.Join(profilesDir, profileName)
-	if _, err := os.Stat(legacyPath); err == nil {
-		return legacyPath
-	}
-
-	rolePath := filepath.Join(profilesDir, "roles", profileName)
-	if _, err := os.Stat(rolePath); err == nil {
-		return rolePath
+	// Look for profile in agents/ directory
+	agentPath := filepath.Join(profilesDir, "agents", profileName)
+	if _, err := os.Stat(agentPath); err == nil {
+		return agentPath
 	}
 
 	return ""

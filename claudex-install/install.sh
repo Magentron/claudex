@@ -110,24 +110,36 @@ if [ -e "$CLAUDE_PATH" ]; then
     echo ""
 fi
 
-# Create the symlink
-info "Creating symlink..."
+# Set up BMad .claude directory for agent profiles and other customizations
+info "Setting up BMad .claude directory..."
 BMAD_CLAUDE="$BMAD_DIR/../.claude"
 
-# Convert to absolute path and resolve symlinks
-BMAD_CLAUDE="$(cd "$BMAD_CLAUDE" 2>/dev/null && pwd)"
+# Convert to absolute path
+BMAD_CLAUDE="$(cd "$(dirname "$BMAD_CLAUDE")" && pwd)/$(basename "$BMAD_CLAUDE")"
 
+# Create BMad .claude directory if it doesn't exist
 if [ ! -d "$BMAD_CLAUDE" ]; then
-    error "Error: BMad .claude directory not found at: $BMAD_DIR/../.claude"
+    info "Creating BMad .claude directory: $BMAD_CLAUDE"
+    mkdir -p "$BMAD_CLAUDE"
+fi
+
+# Source directory for claudex-go/.claude
+CLAUDEX_CLAUDE_DIR="$BMAD_DIR/../claudex-go/.claude"
+
+# Ensure claudex-go/.claude directory exists
+if [ ! -d "$CLAUDEX_CLAUDE_DIR" ]; then
+    error "Error: Claudex .claude directory not found: $CLAUDEX_CLAUDE_DIR"
     exit 1
 fi
 
-ln -s "$BMAD_CLAUDE" "$CLAUDE_PATH"
+# Convert to absolute path
+CLAUDEX_CLAUDE_DIR="$(cd "$CLAUDEX_CLAUDE_DIR" && pwd)"
 
 # Create symbolic links for agent profiles
 info "Setting up agent profile symbolic links..."
 
 PROFILES_DIR="$BMAD_DIR/../claudex-go/profiles"
+AGENTS_DIR="$PROFILES_DIR/agents"
 
 # Ensure profiles directory exists
 if [ ! -d "$PROFILES_DIR" ]; then
@@ -135,77 +147,93 @@ if [ ! -d "$PROFILES_DIR" ]; then
     exit 1
 fi
 
-# Convert to absolute path
+# Ensure agents directory exists
+if [ ! -d "$AGENTS_DIR" ]; then
+    error "Error: Agents directory not found: $AGENTS_DIR"
+    exit 1
+fi
+
+# Convert to absolute paths
 PROFILES_DIR="$(cd "$PROFILES_DIR" && pwd)"
+AGENTS_DIR="$(cd "$AGENTS_DIR" && pwd)"
 
-# Define the symbolic links to create within .claude directory
-# Format: "source_path:target_relative_to_bmad_claude"
-PROFILE_LINKS_CLAUDE=(
-    "$PROFILES_DIR/prompt-engineer:agents/prompt-engineer.md"
-    "$PROFILES_DIR/prompt-engineer:commands/BMad/agents/prompt-engineer.md"
-    "$PROFILES_DIR/team-lead-new:commands/BMad/agents/team-lead-new.md"
-    "$PROFILES_DIR/researcher:agents/researcher.md"
-    "$PROFILES_DIR/researcher:commands/BMad/agents/researcher.md"
-    "$PROFILES_DIR/architect:agents/architect.md"
-    "$PROFILES_DIR/architect:commands/BMad/agents/architect.md"
-)
+# Create symbolic link to the profiles directory itself in .claude
+info "Creating profiles directory symlink in .claude..."
+PROFILES_LINK_TARGET="$BMAD_CLAUDE/profiles"
+if [ -e "$PROFILES_LINK_TARGET" ] || [ -L "$PROFILES_LINK_TARGET" ]; then
+    rm -f "$PROFILES_LINK_TARGET"
+fi
+ln -s "$PROFILES_DIR" "$PROFILES_LINK_TARGET"
 
-# Define symbolic links for other BMad directories (relative to BMAD_DIR)
-PROFILE_LINKS_OTHER=(
-    "$PROFILES_DIR/architect:../.bmad-core/agents/architect.md"
-    "$PROFILES_DIR/infra-devops-platform:../.bmad-infrastructure-devops/agents/infra-devops-platform.md"
-    "$PROFILES_DIR/infra-devops-platform:commands/bmadInfraDevOps/agents/infra-devops-platform.md"
-)
+# Populate BMad .claude with symlinks from claudex-go/.claude
+info "Populating BMad .claude with symlinks from claudex-go/.claude..."
 
-# Create symbolic links within .claude directory
-for link_spec in "${PROFILE_LINKS_CLAUDE[@]}"; do
-    SOURCE="${link_spec%%:*}"
-    TARGET_REL="${link_spec##*:}"
-    TARGET="$BMAD_CLAUDE/$TARGET_REL"
+# Find all files in claudex-go/.claude and create symlinks in BMad .claude
+while IFS= read -r -d '' file; do
+    # Get relative path from claudex-go/.claude
+    REL_PATH="${file#$CLAUDEX_CLAUDE_DIR/}"
     
-    # Check if source exists
-    if [ ! -f "$SOURCE" ]; then
-        warning "Source profile not found: $SOURCE (skipping)"
+    # Skip if it's the directory itself
+    if [ "$file" = "$CLAUDEX_CLAUDE_DIR" ]; then
         continue
     fi
+    
+    # Target path in BMAD_CLAUDE
+    TARGET="$BMAD_CLAUDE/$REL_PATH"
+    
+    # Create parent directory if needed
+    mkdir -p "$(dirname "$TARGET")"
     
     # Remove existing file/link if it exists
     if [ -e "$TARGET" ] || [ -L "$TARGET" ]; then
         rm -f "$TARGET"
     fi
     
-    # Create parent directory if needed
-    mkdir -p "$(dirname "$TARGET")"
-    
     # Create symbolic link
-    ln -s "$SOURCE" "$TARGET"
-done
+    ln -s "$file" "$TARGET"
+done < <(find "$CLAUDEX_CLAUDE_DIR" -type f -print0)
 
-# Create symbolic links in other BMad directories
-for link_spec in "${PROFILE_LINKS_OTHER[@]}"; do
-    SOURCE="${link_spec%%:*}"
-    TARGET_REL="${link_spec##*:}"
-    TARGET="$BMAD_CLAUDE/$TARGET_REL"
+success "BMad .claude populated with symlinks"
+
+# Dynamically create symbolic links for all agent profile files
+info "Discovering and linking agent profiles..."
+
+# Create directories for agent profiles
+mkdir -p "$BMAD_CLAUDE/agents"
+mkdir -p "$BMAD_CLAUDE/commands/agents"
+
+# Find all profile files in the agents directory (non-recursively, files only)
+while IFS= read -r -d '' profile_file; do
+    # Get the basename of the profile file
+    PROFILE_NAME="$(basename "$profile_file")"
     
-    # Check if source exists
-    if [ ! -f "$SOURCE" ]; then
-        warning "Source profile not found: $SOURCE (skipping)"
+    # Skip if it's a directory or hidden file
+    if [ -d "$profile_file" ] || [[ "$PROFILE_NAME" == .* ]]; then
         continue
     fi
     
-    # Remove existing file/link if it exists
-    if [ -e "$TARGET" ] || [ -L "$TARGET" ]; then
-        rm -f "$TARGET"
-    fi
+    # Create symlinks in both agents/ and commands/agents/
+    # Format: profile-name -> profile-name.md
+    AGENT_TARGET="$BMAD_CLAUDE/agents/${PROFILE_NAME}.md"
+    COMMAND_TARGET="$BMAD_CLAUDE/commands/agents/${PROFILE_NAME}.md"
     
-    # Create parent directory if needed
-    mkdir -p "$(dirname "$TARGET")"
+    # Remove existing symlinks if they exist
+    [ -e "$AGENT_TARGET" ] || [ -L "$AGENT_TARGET" ] && rm -f "$AGENT_TARGET"
+    [ -e "$COMMAND_TARGET" ] || [ -L "$COMMAND_TARGET" ] && rm -f "$COMMAND_TARGET"
     
-    # Create symbolic link
-    ln -s "$SOURCE" "$TARGET"
-done
+    # Create symbolic links
+    ln -s "$profile_file" "$AGENT_TARGET"
+    ln -s "$profile_file" "$COMMAND_TARGET"
+    
+    info "  Linked profile: $PROFILE_NAME"
+done < <(find "$AGENTS_DIR" -maxdepth 1 -type f -print0)
 
 success "Agent profile symbolic links created"
+
+# Create symlink from target project to BMad .claude (after all customizations are done)
+info "Creating symlink from target to BMad .claude..."
+ln -s "$BMAD_CLAUDE" "$CLAUDE_PATH"
+success "Target project .claude symlinked to BMad .claude"
 
 # Install claudex binary to PATH
 info "Installing claudex binary to PATH..."
@@ -265,8 +293,11 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  What Was Installed:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ✓ BMad .claude directory symlinked to project"
-echo "  ✓ Agent profile symlinks created (10 links)"
+echo "  ✓ BMad .claude directory created/updated"
+echo "  ✓ BMad .claude populated with claudex-go/.claude symlinks"
+echo "  ✓ Agent profile symlinks created in BMad .claude"
+echo "  ✓ Profiles directory symlinked in BMad .claude"
+echo "  ✓ Target project .claude symlinked to BMad .claude"
 echo "  ✓ Claudex binary installed to /usr/local/bin"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

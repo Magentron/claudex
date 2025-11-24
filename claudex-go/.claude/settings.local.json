@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(go build:*)"
     ],
     "deny": [],
     "ask": []
@@ -12,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/maikel/Workspace/Pelago/bmad/.claude/hooks/session-end.sh"
+            "command": "./hooks/session-end.sh"
           }
         ]
       }
@@ -22,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/maikel/Workspace/Pelago/bmad/.claude/hooks/subagent-stop.sh"
+            "command": ".claude/hooks/subagent-stop.sh"
           }
         ]
       }

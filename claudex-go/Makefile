@@ -6,7 +6,7 @@ all: build
 # Build the executable
 build:
 	@echo "Building claudex..."
-	@go build -o claudex main.go
+	@go build -o claudex
 	@echo "✓ Built: claudex"
 
 # Install dependencies

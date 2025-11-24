@@ -1,0 +1,1 @@
+/Users/maikel/Workspace/Pelago/bmad/claudex-go/profiles/researcher
