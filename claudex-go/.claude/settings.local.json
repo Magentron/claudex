@@ -42,6 +42,10 @@
           {
             "type": "command",
             "command": ".claude/hooks/post-tool-use.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-doc-updater.sh"
           }
         ]
       }
