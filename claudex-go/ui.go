@@ -50,7 +50,6 @@ type model struct {
 	sessionPath string
 	projectDir  string
 	sessionsDir string
-	profilesDir string
 	stage       string
 	quitting    bool
 	choice      string

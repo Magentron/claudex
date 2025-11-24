@@ -238,8 +238,17 @@ success "Target project .claude symlinked to BMad .claude"
 # Install claudex binary to PATH
 info "Installing claudex binary to PATH..."
 
+# Build the binary first to ensure it exists and is up to date
+info "Building claudex binary..."
+if ! (cd "$BMAD_DIR/../claudex-go" && make build >/dev/null 2>&1); then
+    error "Failed to build claudex binary. Make sure Go is installed."
+    # Don't exit, just warn, in case they only want the profiles
+    warning "Skipping binary installation."
+else
+    success "Claudex binary built successfully"
+fi
+
 CLAUDEX_BINARY="$BMAD_DIR/../claudex-go/claudex"
-PROFILES_SOURCE="$BMAD_DIR/../claudex-go/profiles"
 INSTALL_DIR="/usr/local/bin"
 
 if [ ! -f "$CLAUDEX_BINARY" ]; then
@@ -253,14 +262,12 @@ else
         fi
         ln -s "$CLAUDEX_BINARY" "$INSTALL_DIR/claudex"
         
-        # Create symlink for .profiles directory
+        # Remove legacy .profiles symlink if it exists
         if [ -e "$INSTALL_DIR/.profiles" ] || [ -L "$INSTALL_DIR/.profiles" ]; then
             rm -f "$INSTALL_DIR/.profiles"
         fi
-        ln -s "$PROFILES_SOURCE" "$INSTALL_DIR/.profiles"
         
         success "Claudex binary installed to $INSTALL_DIR/claudex"
-        success "Profiles symlink created at $INSTALL_DIR/.profiles"
     else
         # Need sudo for installation
         echo ""
@@ -271,14 +278,12 @@ else
             fi
             sudo ln -s "$CLAUDEX_BINARY" "$INSTALL_DIR/claudex"
             
-            # Create symlink for .profiles directory
+            # Remove legacy .profiles symlink if it exists
             if [ -e "$INSTALL_DIR/.profiles" ] || [ -L "$INSTALL_DIR/.profiles" ]; then
                 sudo rm -f "$INSTALL_DIR/.profiles"
             fi
-            sudo ln -s "$PROFILES_SOURCE" "$INSTALL_DIR/.profiles"
             
             success "Claudex binary installed to $INSTALL_DIR/claudex"
-            success "Profiles symlink created at $INSTALL_DIR/.profiles"
         else
             error "Failed to get sudo privileges"
             warning "You can manually add claudex to your PATH by adding this to your shell config:"
@@ -310,7 +315,7 @@ echo "  2. Use claudex command (now available globally):"
 echo "     claudex [command] [options]"
 echo ""
 echo "  3. Or use BMad agents with claude CLI:"
-echo "     claude --system-prompt \"\$(cat .claude/commands/BMad/agents/team-lead.md)\" init"
+echo "     claude --system-prompt \"\$(cat .claude/commands/agents/team-lead-new.md)\" init"
 echo ""
 echo "  4. Or use the Makefile (if available in your project):"
 echo "     make team-lead"

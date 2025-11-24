@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +19,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 )
+
+//go:embed profiles
+var profilesFS embed.FS
 
 // buildSystemPromptWithSessionContext injects session context into the system prompt
 // to ensure all agents follow session folder documentation rules.
@@ -92,15 +97,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	exe, err := os.Executable()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-	claudexDir := filepath.Dir(exe)
-
 	sessionsDir := filepath.Join(projectDir, "sessions")
-	profilesDir := filepath.Join(claudexDir, ".profiles")
 
 	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -148,7 +145,6 @@ func main() {
 		stage:       "session",
 		projectDir:  projectDir,
 		sessionsDir: sessionsDir,
-		profilesDir: profilesDir,
 	}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
@@ -169,7 +165,7 @@ func main() {
 	var newSessionProfileContent []byte
 	if fm.choice == "new" {
 		// First, select a profile
-		profiles, err := getProfiles(profilesDir)
+		profiles, err := getProfiles()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -178,7 +174,7 @@ func main() {
 		delegate := itemDelegate{}
 		profileItems := make([]list.Item, len(profiles))
 		for i, profile := range profiles {
-			fullPath := resolveProfilePath(profilesDir, profile)
+			fullPath := resolveProfilePath(profile)
 			desc := extractProfileDescription(fullPath)
 			profileItems[i] = sessionItem{
 				title:       profile,
@@ -199,7 +195,6 @@ func main() {
 			stage:       "profile",
 			projectDir:  projectDir,
 			sessionsDir: sessionsDir,
-			profilesDir: profilesDir,
 		}
 
 		p2 := tea.NewProgram(pm, tea.WithAltScreen())
@@ -217,7 +212,7 @@ func main() {
 		profileName := pm2.choice
 		// profilePath := filepath.Join(profilesDir, profileName) // No longer used directly
 
-		profileContent, err = loadProfile(profilesDir, profileName)
+		profileContent, err = loadProfile(profileName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -259,7 +254,6 @@ func main() {
 			sessionPath: fm.sessionPath,
 			projectDir:  projectDir,
 			sessionsDir: sessionsDir,
-			profilesDir: profilesDir,
 		}
 
 		rfProgram := tea.NewProgram(rfModel, tea.WithAltScreen())
@@ -379,7 +373,7 @@ func main() {
 		}
 	} else {
 		// For new/fork sessions, show profile selector
-		profiles, err := getProfiles(profilesDir)
+		profiles, err := getProfiles()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -387,7 +381,7 @@ func main() {
 
 		profileItems := make([]list.Item, len(profiles))
 		for i, profile := range profiles {
-			fullPath := resolveProfilePath(profilesDir, profile)
+			fullPath := resolveProfilePath(profile)
 			desc := extractProfileDescription(fullPath)
 			profileItems[i] = sessionItem{
 				title:       profile,
@@ -410,7 +404,6 @@ func main() {
 			sessionPath: fm.sessionPath,
 			projectDir:  projectDir,
 			sessionsDir: sessionsDir,
-			profilesDir: profilesDir,
 		}
 
 		p2 := tea.NewProgram(pm, tea.WithAltScreen())
@@ -429,7 +422,7 @@ func main() {
 		profileName := pm2.choice
 		// profilePath := filepath.Join(profilesDir, profileName) // Not used
 
-		profileContent, err = loadProfile(profilesDir, profileName)
+		profileContent, err = loadProfile(profileName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -676,12 +669,11 @@ func getSessions(sessionsDir string) ([]sessionItem, error) {
 	return sessions, nil
 }
 
-func getProfiles(profilesDir string) ([]string, error) {
+func getProfiles() ([]string, error) {
 	var profiles []string
 
-	// Look for profiles in agents/ directory
-	agentsDir := filepath.Join(profilesDir, "agents")
-	entries, err := os.ReadDir(agentsDir)
+	// Look for profiles in profiles/agents/ directory in embedded FS
+	entries, err := fs.ReadDir(profilesFS, "profiles/agents")
 	if err != nil {
 		// If agents directory doesn't exist, return empty list
 		if os.IsNotExist(err) {
@@ -703,7 +695,7 @@ func getProfiles(profilesDir string) ([]string, error) {
 }
 
 func extractProfileDescription(profilePath string) string {
-	file, err := os.Open(profilePath)
+	file, err := profilesFS.Open(profilePath)
 	if err != nil {
 		return ""
 	}
@@ -857,20 +849,16 @@ func renameSessionWithClaudeID(oldPath, sessionName, claudeSessionID string) (st
 	return newPath, nil
 }
 
-func loadProfile(profilesDir, profileName string) ([]byte, error) {
-	// Look for profile in agents/ directory
-	agentPath := filepath.Join(profilesDir, "agents", profileName)
-	if _, err := os.Stat(agentPath); err == nil {
-		return os.ReadFile(agentPath)
-	}
-
-	return nil, fmt.Errorf("profile not found: %s", profileName)
+func loadProfile(profileName string) ([]byte, error) {
+	// Look for profile in profiles/agents/ directory
+	agentPath := "profiles/agents/" + profileName
+	return fs.ReadFile(profilesFS, agentPath)
 }
 
-func resolveProfilePath(profilesDir, profileName string) string {
-	// Look for profile in agents/ directory
-	agentPath := filepath.Join(profilesDir, "agents", profileName)
-	if _, err := os.Stat(agentPath); err == nil {
+func resolveProfilePath(profileName string) string {
+	// Look for profile in profiles/agents/ directory
+	agentPath := "profiles/agents/" + profileName
+	if _, err := fs.Stat(profilesFS, agentPath); err == nil {
 		return agentPath
 	}
 
