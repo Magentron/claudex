@@ -169,59 +169,10 @@ Instructions:
 done
 
 # ---------------------------------------------------------
-# Update Session History
+# Update Session History (REMOVED)
 # ---------------------------------------------------------
-
-# Construct Prompt for Claude
-PROMPT="You are an AI assistant helping to document a coding session.
-A subagent (Agent ID: $AGENT_ID) has just completed a task.
-Your goal is to append a concise summary of what the subagent did to the session history.
-
-Here is the recent content of the session history (for context):
----
-$EXISTING_HISTORY
----
-
-Here is the transcript of the subagent's execution (JSONL format):
----
-$TRANSCRIPT_CONTENT
----
-
-Instructions:
-1. Analyze the transcript to understand what the subagent accomplished.
-2. Look for tool uses (file edits, commands run) and their outcomes.
-3. Identify if the task was completed successfully or if there were errors.
-4. Generate a markdown entry to append to the history.
-5. The entry should start with a header: '## 🤖 Subagent Execution'
-6. Include the Agent ID and a Status (Completed/Failed).
-7. Provide a bulleted summary of actions taken.
-8. Be concise. Do not repeat the entire history.
-9. Output ONLY the markdown to be appended. Do not include any conversational text."
-
-# Call Claude
-log_message "Calling Claude to analyze transcript for history..."
-SUMMARY=$(CLAUDE_HOOK_INTERNAL=1 claude -p "$PROMPT")
-
-if [ $? -eq 0 ] && [ ! -z "$SUMMARY" ]; then
-    echo "" >> "$HISTORY_FILE"
-    echo "$SUMMARY" >> "$HISTORY_FILE"
-    echo "" >> "$HISTORY_FILE"
-    echo "---" >> "$HISTORY_FILE"
-    log_message "Updated session history with Claude's analysis."
-else
-    log_message "Claude call failed or returned empty. Fallback to simple logging."
-    
-    # Fallback logic (original simple append)
-    TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "" >> "$HISTORY_FILE"
-    echo "## 🤖 Agent Execution ($TIMESTAMP)" >> "$HISTORY_FILE"
-    echo "**Agent ID**: \`$AGENT_ID\`" >> "$HISTORY_FILE"
-    echo "**Status**: Completed (Analysis Failed)" >> "$HISTORY_FILE"
-    echo "" >> "$HISTORY_FILE"
-    echo "*(Claude analysis failed, check logs)*" >> "$HISTORY_FILE"
-    echo "" >> "$HISTORY_FILE"
-    echo "---" >> "$HISTORY_FILE"
-fi
+# The session history update logic has been removed as requested.
+# This file is now handled by the auto-doc-updater hook (session-overview.md) or other mechanisms.
 
 ) >/dev/null 2>&1 &
 # Disown to ensure it keeps running after script exits
