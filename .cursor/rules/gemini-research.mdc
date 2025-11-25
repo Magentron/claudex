@@ -1,0 +1,149 @@
+---
+description: Apply this rule whenever: - You need to search or understand existing code - You need to find patterns, functions, or implementations across the codebase - You need to analyze code structure or architecture - You need to locate specific functionality or behaviors - You need to understand how different parts of the codebase interact - Any task that requires deep codebase exploration or research
+alwaysApply: false
+---
+# Gemini Research Delegation Rule
+
+## Context
+This rule ensures that all codebase research tasks are delegated to Gemini for efficient and comprehensive analysis.
+
+## When to Apply
+Apply this rule whenever:
+- You need to search or understand existing code
+- You need to find patterns, functions, or implementations across the codebase
+- You need to analyze code structure or architecture
+- You need to locate specific functionality or behaviors
+- You need to understand how different parts of the codebase interact
+- Any task that requires deep codebase exploration or research
+
+## How to Delegate
+
+Always use the following command pattern:
+
+```bash
+gemini -p "[your detailed prompt]"
+```
+
+### Prompt Guidelines
+- Be specific about what you're researching
+- Clearly define the expected output format
+- Include context about why the research is needed
+- Specify any constraints or focus areas
+- **Request concise outputs**: Ask for summaries, key findings, or specific sections rather than exhaustive details
+- **Limit scope**: Break large research tasks into smaller, focused queries
+- **Set explicit limits**: Always include word counts, item counts, or other constraints
+
+### Examples
+
+**Example 1: Finding implementation patterns (concise output)**
+```bash
+gemini -p "Research how error handling is implemented across the codebase. Provide a CONCISE summary of the top 3 main patterns used, with ONE code example for each. Limit response to 500 words."
+```
+
+**Example 2: Understanding architecture (structured & limited)**
+```bash
+gemini -p "Analyze the session management architecture in the claudex-go module. Provide: 1) A simple flow diagram (text-based), 2) List of 5 key components, 3) Brief explanation (300 words max). Use clear sections."
+```
+
+**Example 3: Locating functionality (focused scope)**
+```bash
+gemini -p "Find all places where profile loading occurs in the claudex-go module ONLY. List each location with the file path and function name. Format as a simple table. Limit to top 5 most important locations."
+```
+
+**Example 4: Code dependencies (summary first)**
+```bash
+gemini -p "Research all dependencies between claudex-go and claudex-todo modules. Provide a HIGH-LEVEL summary (200 words max) with just the key relationships. List the 3 most critical dependencies only."
+```
+
+**Example 5: Progressive disclosure**
+```bash
+# First: Get quick overview
+gemini -p "List all error handling patterns in the codebase. Just pattern names with one-sentence descriptions. Max 10 patterns."
+# Then: Deep dive on specific pattern
+gemini -p "Explain the 'custom error wrapper' pattern in detail. 250 words, include 2 code examples."
+```
+
+## Important Notes
+- **Always delegate first, analyze second**: Don't attempt to manually search or grep the codebase when Gemini can do comprehensive research
+- **Trust the research**: Gemini has deep codebase understanding and can find patterns you might miss
+- **Format matters**: Always specify the desired output format in your prompt to get structured, usable results
+- **Be thorough in prompts**: The better your prompt, the better the research results
+
+## Managing Long Outputs & Latency
+To handle Gemini's verbose responses and reduce latency:
+
+### 1. Always Request Concise Outputs
+- **Include explicit limits** in every prompt (e.g., "Limit to 300 words", "Top 5 results only")
+- Ask for summaries instead of exhaustive analysis
+- Use directive phrases: "CONCISE", "HIGH-LEVEL", "KEY POINTS ONLY", "BRIEF"
+- Specify exact counts: "List exactly 3 examples", "Provide 5 key findings"
+
+### 2. Break Down Large Queries
+Split comprehensive research into focused, sequential queries:
+```bash
+# Bad: Single large query
+gemini -p "Analyze entire codebase architecture, all patterns, all dependencies..."
+
+# Good: Multiple focused queries
+gemini -p "List top 5 architectural components in claudex-go. 200 words max."
+gemini -p "What is the primary data flow pattern? One paragraph only."
+gemini -p "List exactly 3 main external dependencies. Table format, no descriptions."
+```
+
+### 3. Use Structured Output Formats
+Request specific structures that limit verbosity:
+```bash
+# Request tables instead of prose
+gemini -p "Find all config file locations. Return as table: File Path | Purpose. Max 10 rows."
+
+# Request bullet points instead of paragraphs
+gemini -p "What are the key features of the auth module? Bullet list only, max 7 items, no elaboration."
+
+# Request numbered lists with constraints
+gemini -p "Top 5 performance bottlenecks. Numbered list format: Location + Impact (one line each)."
+```
+
+### 4. Progressive Disclosure (Iterative Refinement)
+Start with overview, then drill down based on what you learn:
+```bash
+# Step 1: Get high-level overview
+gemini -p "List all modules in the codebase. Just module names with 5-word descriptions."
+
+# Step 2: Based on results, dive into specific area
+gemini -p "Explain claudex-go session management only. 250 words max, focus on core flow."
+
+# Step 3: Drill deeper if needed
+gemini -p "How does session storage work? 150 words, code example optional."
+```
+
+### 5. Use Question Constraints
+Frame questions to naturally limit responses:
+```bash
+# Instead of "How does X work?" → Ask specific questions
+gemini -p "What are the 3 main functions in the auth module?"
+gemini -p "Where is the session ID generated? File and function name only."
+gemini -p "Is error handling centralized? Yes/No + 50 word explanation."
+```
+
+## What NOT to Delegate
+The following should still be handled directly:
+- Simple file reads when you already know the exact file
+- Making code changes or edits
+- Running tests or builds
+- Git operations
+- File system operations
+
+## Workflow Integration
+1. **Receive research task** → Assess scope and determine what you actually need to know
+2. **Break down if needed** → Split large tasks into 3-5 focused questions
+3. **Formulate concise prompts** → ALWAYS include:
+   - Word/item limits (e.g., "300 words max", "top 5 only")
+   - Output format (e.g., "table format", "bullet list", "numbered steps")
+   - Scope constraints (e.g., "in claudex-go only", "focus on authentication")
+4. **Execute queries sequentially** → Start with overview, then drill down
+5. **Review results** → Check if output is actionable and within expected size
+6. **If too verbose** → Refine prompt with stricter limits (cut word count in half, reduce item count)
+
+---
+
+*This rule optimizes your workflow by leveraging Gemini's specialized research capabilities for codebase exploration.*
