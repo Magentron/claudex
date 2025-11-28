@@ -239,7 +239,7 @@ func main() {
 		profileName := pm2.choice
 		// profilePath := filepath.Join(profilesDir, profileName) // No longer used directly
 
-		profileContent, err = loadProfile(profileName)
+		profileContent, err = loadComposedProfile(profileName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -559,7 +559,7 @@ func main() {
 		profileName := pm2.choice
 		// profilePath := filepath.Join(profilesDir, profileName) // Not used
 
-		profileContent, err = loadProfile(profileName)
+		profileContent, err = loadComposedProfile(profileName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -781,26 +781,37 @@ func getSessions(sessionsDir string) ([]sessionItem, error) {
 }
 
 func getProfiles() ([]string, error) {
-	var profiles []string
+	profileSet := make(map[string]bool)
 
-	// Look for profiles in profiles/agents/ directory in embedded FS
+	// Look for profiles in embedded FS profiles/agents/ directory
 	entries, err := fs.ReadDir(profilesFS, "profiles/agents")
-	if err != nil {
-		// If agents directory doesn't exist, return empty list
-		if os.IsNotExist(err) {
-			return []string{}, nil
-		}
-		return nil, err
-	}
-
-	for _, entry := range entries {
-		name := entry.Name()
-		// Skip directories and hidden files
-		if !entry.IsDir() && !strings.HasPrefix(name, ".") {
-			profiles = append(profiles, name)
+	if err == nil {
+		for _, entry := range entries {
+			name := entry.Name()
+			if !entry.IsDir() && !strings.HasPrefix(name, ".") {
+				profileSet[name] = true
+			}
 		}
 	}
 
+	// Also look for profiles in filesystem .claude/agents/ directory
+	fsAgentsDir := filepath.Join(".claude", "agents")
+	if fsEntries, err := os.ReadDir(fsAgentsDir); err == nil {
+		for _, entry := range fsEntries {
+			name := entry.Name()
+			if !entry.IsDir() && !strings.HasPrefix(name, ".") {
+				// Remove .md extension for consistent naming
+				name = strings.TrimSuffix(name, ".md")
+				profileSet[name] = true
+			}
+		}
+	}
+
+	// Convert set to sorted slice
+	var profiles []string
+	for name := range profileSet {
+		profiles = append(profiles, name)
+	}
 	sort.Strings(profiles)
 	return profiles, nil
 }
@@ -1014,6 +1025,30 @@ func loadProfile(profileName string) ([]byte, error) {
 	// Look for profile in profiles/agents/ directory
 	agentPath := "profiles/agents/" + profileName
 	return fs.ReadFile(profilesFS, agentPath)
+}
+
+// loadProfileFromFS loads a profile from the filesystem (.claude/agents/)
+func loadProfileFromFS(profileName string) ([]byte, error) {
+	// Try with .md extension first
+	agentPath := filepath.Join(".claude", "agents", profileName+".md")
+	if data, err := os.ReadFile(agentPath); err == nil {
+		return data, nil
+	}
+
+	// Try without extension
+	agentPath = filepath.Join(".claude", "agents", profileName)
+	return os.ReadFile(agentPath)
+}
+
+// loadComposedProfile tries embedded FS first, then filesystem
+func loadComposedProfile(profileName string) ([]byte, error) {
+	// First try embedded FS
+	if data, err := loadProfile(profileName); err == nil {
+		return data, nil
+	}
+
+	// Then try filesystem
+	return loadProfileFromFS(profileName)
 }
 
 func resolveProfilePath(profileName string) string {
