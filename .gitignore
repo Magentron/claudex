@@ -2,4 +2,3 @@ sessions/
 *.log
 .claude/
 !claudex-go/.claude/
-claudex

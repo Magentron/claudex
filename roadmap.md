@@ -7,15 +7,9 @@ To Do:
     - Researcher: haiku/sonnet
     - Engineer: sonnet/opus
     - Prompt Engineer: sonnet/opus
-  - Analyze all hooks via loggers: /hooks (look into Stop, SubagentStart)
-    - Documenter:
-      - Analyze if documenter could be better if triggered on PreCompact or Stop
-      - Idea: With autocompact disabled, when context is full you get an error. Use gemini to read the transcript and produce or update the overview document. Remove from the transcript tools executions and similar non-relevant things (like I did with claudex already). It's important that gemini produce several docs, being the overview a small one with pointers to be loaded only on demand.
   - Find a solution to allow the user to define where the relevant documentation is located (product, architecture, standards, etc)
   - Review all agents to adjust their output format to make sure they provide enough context to the caller (team lead) but avoid verbose responses
   - Create QA that is responsible for defining the cases to be covered by the test and evals suite. They will receive the definition of the feature as input and come up with the test and evals suite definition at a product/business level. The QA should execute in parallel of the Architect.
-  - Refactor resume session feature:
-    - Resume should: 1. ask the user if they want to start with fresh memory or continue with the previous one; 2.1 if continue is chosen the execution is like the one we have currently, 2.2 if fresh memory is chosen then a new session-id is generated, a new folder is created as a clone of the previous one and  the previous one is removed (this is what makes it different from "fork", which keeps both folders). In case of "fork", we need to refactor to allow the user to enter a description like with new sessions, with the difference that the current session folder is cloned and kept.
   - Architect to define isolation testing strategy in execution plan:
     - Goal: Define a way to test new development in isolation to enable a quick feedback loop for the Engineer to check results and iterate.
   - Implement `claudex --update`:
@@ -23,6 +17,11 @@ To Do:
 
 
 Done:
+  - **Remove Profile Selection UI** (2025-11-30):
+    - Removed profile selection menus from new session and old session flows
+    - Application now directly uses `team-lead-new` profile without prompting
+    - Simplified user experience by eliminating unnecessary selection step
+    - Net reduction of ~93 lines of UI code in main.go
   - **Composable Engineer Agents** (2025-11-29):
     - Refactored monolithic engineer agents into composable Role + Skills architecture
     - Created base `profiles/roles/engineer.md` with generic workflow and orchestration interface
