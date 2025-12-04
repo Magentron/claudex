@@ -1,5 +1,5 @@
 sessions/
 *.log
 .claude/
-!claudex-go/.claude/
+!src/.claude/
 roadmap.md

@@ -1,76 +1,75 @@
 # Contributing to Claudex
 
-Thank you for your interest in contributing to Claudex! This document provides guidelines for contributing.
+Thank you for your interest in contributing to Claudex! This document provides guidelines for contributing to the project.
+
+## Reporting Bugs
+
+When reporting bugs, please include:
+- A clear description of the issue
+- Steps to reproduce the problem
+- Expected vs actual behavior
+- Your environment (OS, Go version, Claudex version)
+- Relevant logs or error messages
+
+Open an issue on GitHub with the `bug` label.
+
+## Suggesting Features
+
+Feature suggestions are welcome! Please:
+- Check existing issues to avoid duplicates
+- Describe the feature and its use case clearly
+- Explain why this feature would benefit Claudex users
+- Open an issue with the `enhancement` label
+
+## Submitting Pull Requests
+
+1. **Fork and Clone**: Fork the repository and clone it locally
+2. **Create a Branch**: Use a descriptive branch name (e.g., `fix-config-parsing`, `add-session-export`)
+3. **Make Changes**: Follow the code style guidelines below
+4. **Write Tests**: Add or update tests for your changes
+5. **Run Tests**: Ensure all tests pass with `go test ./...`
+6. **Format Code**: Run `go fmt ./...` and `go vet ./...`
+7. **Commit**: Write clear, concise commit messages
+8. **Push**: Push to your fork and submit a pull request
+9. **Describe**: Explain what your PR does and why
+
+## Code Style Guidelines
+
+- Follow [Effective Go](https://go.dev/doc/effective_go) conventions
+- Use `gofmt` for formatting (non-negotiable)
+- Write clear, self-documenting code
+- Add godoc comments for exported functions and types
+- Keep functions focused and reasonably sized
+- Handle errors explicitly - never ignore them
+- Use meaningful variable and function names
+
+## Testing Requirements
+
+- Write table-driven tests for new functionality
+- Maintain or improve code coverage
+- Test edge cases and error conditions
+- Use `t.Run()` for subtests
+- Ensure tests are deterministic and don't rely on timing
 
 ## Development Setup
 
-1. **Prerequisites**
-   - Go 1.21 or higher
-   - Claude CLI installed
-   - Git
+```bash
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/claudex.git
+cd claudex
 
-2. **Clone and build**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/claudex.git
-   cd claudex/claudex
-   make build
-   ```
+# Install dependencies
+go mod download
 
-3. **Run locally**
-   ```bash
-   make run
-   ```
+# Run tests
+go test ./...
 
-## Code Style
-
-- Follow standard Go conventions (`gofmt`, `golint`)
-- Keep functions focused and small
-- Write descriptive commit messages
-- Add comments for non-obvious logic
-
-## Pull Request Process
-
-1. **Fork the repository** and create your branch from `main`
-2. **Make your changes** with clear, focused commits
-3. **Test your changes** thoroughly
-4. **Update documentation** if needed
-5. **Submit a pull request** with a clear description
-
-### PR Guidelines
-
-- Keep PRs focused on a single change
-- Include relevant issue numbers in the description
-- Ensure the build passes
-- Respond to review feedback promptly
-
-## Reporting Issues
-
-When reporting bugs, please include:
-
-- Claudex version (`claudex --version` if available, or commit hash)
-- Operating system and version
-- Steps to reproduce the issue
-- Expected vs actual behavior
-- Any error messages or logs
-
-## Feature Requests
-
-Feature requests are welcome! Please:
-
-- Check existing issues first to avoid duplicates
-- Describe the use case and expected behavior
-- Explain why this feature would be valuable
-
-## Agent Profiles
-
-When contributing new agent profiles:
-
-1. Place role templates in `profiles/roles/`
-2. Place skill files in `profiles/skills/`
-3. Pre-built agents go in `profiles/agents/`
-4. Follow the existing frontmatter format (name, description, model, color)
-5. Test the profile with actual Claude sessions
+# Build the binary
+go build -o claudex ./cmd/claudex
+```
 
 ## Questions?
 
-Feel free to open an issue for any questions about contributing.
+If you have questions about contributing, feel free to open an issue for discussion.
+
+Thank you for contributing to Claudex!

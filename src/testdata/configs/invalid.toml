@@ -1,0 +1,6 @@
+# Invalid TOML - malformed syntax
+[[doc_paths
+path = "/missing/bracket"
+
+[settings
+invalid syntax here

@@ -1,0 +1,13 @@
+# Valid configuration file for testing
+
+[[doc_paths]]
+path = "/path/to/docs"
+description = "Main documentation"
+
+[[doc_paths]]
+path = "/path/to/specs"
+description = "Technical specifications"
+
+[settings]
+default_agent = "team-lead"
+auto_resume = true
