@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"time"
+
+	"claudex/internal/services/session"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -36,14 +37,8 @@ var (
 			PaddingLeft(4)
 )
 
-type SessionItem struct {
-	Title       string
-	Description string
-	Created     time.Time
-	ItemType    string // "new", "ephemeral", "session"
-}
-
-func (i SessionItem) FilterValue() string { return i.Title }
+// SessionItem is now defined in internal/services/session package
+type SessionItem = session.SessionItem
 
 type Model struct {
 	List        list.Model

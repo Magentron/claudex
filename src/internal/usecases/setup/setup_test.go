@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test_EnsureClaudeDirectory_CreatesStructure verifies that the complete directory
+// Test_Execute_CreatesStructure verifies that the complete directory
 // structure is created with hooks, agents, and settings files from the config directory.
-func Test_EnsureClaudeDirectory_CreatesStructure(t *testing.T) {
+func Test_Execute_CreatesStructure(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	h.Env.Set("HOME", "/home/user")
@@ -36,8 +36,9 @@ func Test_EnsureClaudeDirectory_CreatesStructure(t *testing.T) {
 	h.CreateDir("/project")
 	h.WriteFile("/project/package.json", `{"name": "test-project"}`)
 
-	// Exercise
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", false)
+	// Create usecase and exercise
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", false)
 
 	// Verify - no errors
 	require.NoError(t, err)
@@ -82,9 +83,9 @@ func Test_EnsureClaudeDirectory_CreatesStructure(t *testing.T) {
 	testutil.AssertFileExists(t, h.FS, "/project/.claude/commands/agents/principal-engineer.md")
 }
 
-// Test_EnsureClaudeDirectory_RespectsNoOverwrite verifies that existing files
+// Test_Execute_RespectsNoOverwrite verifies that existing files
 // are preserved when noOverwrite=true, and new files from config are not copied.
-func Test_EnsureClaudeDirectory_RespectsNoOverwrite(t *testing.T) {
+func Test_Execute_RespectsNoOverwrite(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	h.Env.Set("HOME", "/home/user")
@@ -108,8 +109,9 @@ func Test_EnsureClaudeDirectory_RespectsNoOverwrite(t *testing.T) {
 	// Create project with package.json
 	h.WriteFile("/project/package.json", `{"name": "test"}`)
 
-	// Exercise - call with noOverwrite=true
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", true)
+	// Create usecase and exercise - call with noOverwrite=true
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", true)
 
 	// Verify - no errors
 	require.NoError(t, err)
@@ -132,9 +134,9 @@ func Test_EnsureClaudeDirectory_RespectsNoOverwrite(t *testing.T) {
 	testutil.AssertFileExists(t, h.FS, "/project/.claude/agents/architect.md.md")
 }
 
-// Test_EnsureClaudeDirectory_GeneratesEngineerProfiles verifies that engineer
+// Test_Execute_GeneratesEngineerProfiles verifies that engineer
 // profiles are correctly assembled from role + skill templates for detected stacks.
-func Test_EnsureClaudeDirectory_GeneratesEngineerProfiles(t *testing.T) {
+func Test_Execute_GeneratesEngineerProfiles(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	h.Env.Set("HOME", "/home/user")
@@ -152,8 +154,9 @@ func Test_EnsureClaudeDirectory_GeneratesEngineerProfiles(t *testing.T) {
 	h.CreateDir("/project")
 	h.WriteFile("/project/package.json", `{"name": "typescript-project"}`)
 
-	// Exercise
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", false)
+	// Create usecase and exercise
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", false)
 
 	// Verify - no errors
 	require.NoError(t, err)
@@ -206,9 +209,9 @@ func Test_EnsureClaudeDirectory_GeneratesEngineerProfiles(t *testing.T) {
 	testutil.AssertFileExists(t, h.FS, "/project/.claude/commands/agents/principal-engineer.md")
 }
 
-// Test_EnsureClaudeDirectory_MultipleStacks verifies that multiple engineer profiles
+// Test_Execute_MultipleStacks verifies that multiple engineer profiles
 // are generated when multiple stack markers are detected.
-func Test_EnsureClaudeDirectory_MultipleStacks(t *testing.T) {
+func Test_Execute_MultipleStacks(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	h.Env.Set("HOME", "/home/user")
@@ -227,8 +230,9 @@ func Test_EnsureClaudeDirectory_MultipleStacks(t *testing.T) {
 	h.WriteFile("/project/package.json", `{"name": "polyglot-project"}`)
 	h.WriteFile("/project/go.mod", "module example.com/project\n\ngo 1.21")
 
-	// Exercise
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", false)
+	// Create usecase and exercise
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", false)
 
 	// Verify - no errors
 	require.NoError(t, err)
@@ -253,9 +257,9 @@ func Test_EnsureClaudeDirectory_MultipleStacks(t *testing.T) {
 	assert.Contains(t, contentStr, "TypeScript Skill")
 }
 
-// Test_EnsureClaudeDirectory_XDGConfigHome verifies that XDG_CONFIG_HOME
+// Test_Execute_XDGConfigHome verifies that XDG_CONFIG_HOME
 // is respected when looking for the claudex config directory.
-func Test_EnsureClaudeDirectory_XDGConfigHome(t *testing.T) {
+func Test_Execute_XDGConfigHome(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	h.Env.Set("HOME", "/home/user")
@@ -263,18 +267,19 @@ func Test_EnsureClaudeDirectory_XDGConfigHome(t *testing.T) {
 
 	// Create config in custom XDG location
 	h.SetupConfigDir("/custom/config/claudex", map[string]string{
-		"profiles/agents/team-lead.md":   "# Team Lead",
-		"profiles/roles/engineer.md":     "# Engineer",
-		"profiles/skills/typescript.md":  "# TypeScript",
-		"hooks/notification-hook.sh":     "#!/bin/bash\necho notify",
+		"profiles/agents/team-lead.md":  "# Team Lead",
+		"profiles/roles/engineer.md":    "# Engineer",
+		"profiles/skills/typescript.md": "# TypeScript",
+		"hooks/notification-hook.sh":    "#!/bin/bash\necho notify",
 	})
 
 	// Create project
 	h.CreateDir("/project")
 	h.WriteFile("/project/package.json", `{"name": "test"}`)
 
-	// Exercise
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", false)
+	// Create usecase and exercise
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", false)
 
 	// Verify - no errors
 	require.NoError(t, err)
@@ -284,9 +289,9 @@ func Test_EnsureClaudeDirectory_XDGConfigHome(t *testing.T) {
 	testutil.AssertFileExists(t, h.FS, "/project/.claude/agents/team-lead.md.md")
 }
 
-// Test_EnsureClaudeDirectory_MissingConfigDir verifies that an error is returned
+// Test_Execute_MissingConfigDir verifies that an error is returned
 // when the claudex config directory doesn't exist.
-func Test_EnsureClaudeDirectory_MissingConfigDir(t *testing.T) {
+func Test_Execute_MissingConfigDir(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	h.Env.Set("HOME", "/home/user")
@@ -294,8 +299,9 @@ func Test_EnsureClaudeDirectory_MissingConfigDir(t *testing.T) {
 
 	h.CreateDir("/project")
 
-	// Exercise
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", false)
+	// Create usecase and exercise
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", false)
 
 	// Verify - error returned
 	require.Error(t, err)
@@ -303,26 +309,27 @@ func Test_EnsureClaudeDirectory_MissingConfigDir(t *testing.T) {
 	assert.Contains(t, err.Error(), "/home/user/.config/claudex")
 }
 
-// Test_EnsureClaudeDirectory_MissingHOME verifies that an error is returned
+// Test_Execute_MissingHOME verifies that an error is returned
 // when HOME environment variable is not set.
-func Test_EnsureClaudeDirectory_MissingHOME(t *testing.T) {
+func Test_Execute_MissingHOME(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	// Don't set HOME or XDG_CONFIG_HOME
 
 	h.CreateDir("/project")
 
-	// Exercise
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", false)
+	// Create usecase and exercise
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", false)
 
 	// Verify - error returned
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "HOME environment variable not set")
 }
 
-// Test_EnsureClaudeDirectory_NoStackDetected verifies that default stacks
+// Test_Execute_NoStackDetected verifies that default stacks
 // are used when no project markers are found.
-func Test_EnsureClaudeDirectory_NoStackDetected(t *testing.T) {
+func Test_Execute_NoStackDetected(t *testing.T) {
 	// Setup
 	h := testutil.NewTestHarness()
 	h.Env.Set("HOME", "/home/user")
@@ -339,8 +346,9 @@ func Test_EnsureClaudeDirectory_NoStackDetected(t *testing.T) {
 	// Create empty project (no stack markers)
 	h.CreateDir("/project")
 
-	// Exercise
-	err := EnsureClaudeDirectoryWithDeps(h.FS, h.Env, "/project", false)
+	// Create usecase and exercise
+	uc := New(h.FS, h.Env)
+	err := uc.Execute("/project", false)
 
 	// Verify - no errors
 	require.NoError(t, err)

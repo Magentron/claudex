@@ -1,4 +1,4 @@
-package setup
+package stackdetect
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_DetectProjectStacks(t *testing.T) {
+func Test_Detect(t *testing.T) {
 	tests := []struct {
 		name       string
 		files      map[string]string
@@ -60,9 +60,9 @@ func Test_DetectProjectStacks(t *testing.T) {
 		{
 			name: "Multiple stacks - All three",
 			files: map[string]string{
-				"tsconfig.json":     "{}",
-				"go.mod":            "module test",
-				"requirements.txt":  "flask==2.0",
+				"tsconfig.json":    "{}",
+				"go.mod":           "module test",
+				"requirements.txt": "flask==2.0",
 			},
 			wantStacks: []string{"typescript", "go", "python"},
 		},
@@ -77,8 +77,8 @@ func Test_DetectProjectStacks(t *testing.T) {
 		{
 			name: "Python - multiple markers",
 			files: map[string]string{
-				"requirements.txt":  "flask==2.0",
-				"pyproject.toml":    "[project]",
+				"requirements.txt": "flask==2.0",
+				"pyproject.toml":   "[project]",
 			},
 			wantStacks: []string{"python"}, // Should only return once
 		},
@@ -113,8 +113,8 @@ func Test_DetectProjectStacks(t *testing.T) {
 		{
 			name: "Mixed depth - root and nested",
 			files: map[string]string{
-				"go.mod":                       "module root",
-				"frontend/package.json":        `{"name": "frontend"}`,
+				"go.mod":                        "module root",
+				"frontend/package.json":         `{"name": "frontend"}`,
 				"backend/services/api/setup.py": "from setuptools import setup",
 			},
 			wantStacks: []string{"typescript", "go", "python"},
@@ -134,15 +134,15 @@ func Test_DetectProjectStacks(t *testing.T) {
 			files: map[string]string{
 				".hidden/package.json": `{"name": "hidden"}`,
 			},
-			// Note: Based on implementation, detectProjectStacks calls findFile
+			// Note: Based on implementation, Detect calls FindFile
 			// which skips directories starting with "."
 			wantStacks: []string{},
 		},
 		{
 			name: "Multiple Python markers in subdirectories",
 			files: map[string]string{
-				"api/requirements.txt":    "django==4.0",
-				"worker/pyproject.toml":   "[project]",
+				"api/requirements.txt":  "django==4.0",
+				"worker/pyproject.toml": "[project]",
 			},
 			wantStacks: []string{"python"}, // Should deduplicate
 		},
@@ -161,7 +161,7 @@ func Test_DetectProjectStacks(t *testing.T) {
 			}
 
 			// Exercise
-			stacks := DetectProjectStacksWithFs(h.FS, "/project")
+			stacks := Detect(h.FS, "/project")
 
 			// Verify - use ElementsMatch because order doesn't matter
 			assert.ElementsMatch(t, tt.wantStacks, stacks,
@@ -248,7 +248,7 @@ func Test_FindFile_RespectsMaxDepth(t *testing.T) {
 
 			// Verify
 			assert.Equal(t, tt.want, found,
-				"findFile returned %v, want %v for maxDepth=%d and path=%s",
+				"FindFile returned %v, want %v for maxDepth=%d and path=%s",
 				found, tt.want, tt.maxDepth, tt.filePath)
 		})
 	}
@@ -320,7 +320,7 @@ func Test_FindFile_SkipsHiddenDirectories(t *testing.T) {
 
 			// Verify
 			assert.Equal(t, tt.want, found,
-				"findFile returned %v, want %v for path=%s",
+				"FindFile returned %v, want %v for path=%s",
 				found, tt.want, tt.filePath)
 		})
 	}
@@ -380,42 +380,42 @@ func Test_FileExists_WithAfero(t *testing.T) {
 
 			// Verify
 			assert.Equal(t, tt.want, exists,
-				"fileExists returned %v, want %v for path=%s",
+				"FileExists returned %v, want %v for path=%s",
 				exists, tt.want, tt.filePath)
 		})
 	}
 }
 
-func Test_DetectProjectStacks_EdgeCases(t *testing.T) {
+func Test_Detect_EdgeCases(t *testing.T) {
 	t.Run("Empty directory path", func(t *testing.T) {
 		h := testutil.NewTestHarness()
-		stacks := DetectProjectStacksWithFs(h.FS, "")
+		stacks := Detect(h.FS, "")
 		assert.Empty(t, stacks, "Empty path should return empty stacks")
 	})
 
 	t.Run("Non-existent directory", func(t *testing.T) {
 		h := testutil.NewTestHarness()
-		stacks := DetectProjectStacksWithFs(h.FS, "/nonexistent")
+		stacks := Detect(h.FS, "/nonexistent")
 		assert.Empty(t, stacks, "Non-existent directory should return empty stacks")
 	})
 
 	t.Run("File instead of directory", func(t *testing.T) {
 		h := testutil.NewTestHarness()
 		h.WriteFile("/project.txt", "not a directory")
-		stacks := DetectProjectStacksWithFs(h.FS, "/project.txt")
+		stacks := Detect(h.FS, "/project.txt")
 		assert.Empty(t, stacks, "File path should return empty stacks")
 	})
 
 	t.Run("Root directory", func(t *testing.T) {
 		h := testutil.NewTestHarness()
 		h.WriteFile("/go.mod", "module root")
-		stacks := DetectProjectStacksWithFs(h.FS, "/")
+		stacks := Detect(h.FS, "/")
 		assert.Contains(t, stacks, "go", "Should detect at root level")
 	})
 }
 
 func Test_FindFile_Performance(t *testing.T) {
-	// This test ensures findFile doesn't recurse indefinitely or inefficiently
+	// This test ensures FindFile doesn't recurse indefinitely or inefficiently
 	t.Run("Large directory structure", func(t *testing.T) {
 		h := testutil.NewTestHarness()
 		h.CreateDir("/project")

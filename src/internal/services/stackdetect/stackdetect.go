@@ -1,4 +1,7 @@
-package setup
+// Package stackdetect provides technology stack detection for projects.
+// It identifies project technologies (TypeScript, Go, Python) by scanning
+// for marker files like tsconfig.json, go.mod, pyproject.toml, etc.
+package stackdetect
 
 import (
 	"path/filepath"
@@ -7,8 +10,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-// DetectProjectStacksWithFs detects technology stacks based on marker files (searches up to 3 levels deep)
-func DetectProjectStacksWithFs(fs afero.Fs, projectDir string) []string {
+// Detect detects technology stacks based on marker files (searches up to 3 levels deep).
+// It returns a list of detected stack identifiers such as "typescript", "go", "python".
+func Detect(fs afero.Fs, projectDir string) []string {
 	var stacks []string
 
 	// TypeScript detection
@@ -34,7 +38,8 @@ func DetectProjectStacksWithFs(fs afero.Fs, projectDir string) []string {
 	return stacks
 }
 
-// FindFile searches for a file in projectDir and subdirectories up to maxDepth
+// FindFile searches for a file in projectDir and subdirectories up to maxDepth.
+// It performs a breadth-first search, skipping hidden directories (those starting with '.').
 func FindFile(fs afero.Fs, dir string, filename string, maxDepth int) bool {
 	if maxDepth < 0 {
 		return false
@@ -62,7 +67,7 @@ func FindFile(fs afero.Fs, dir string, filename string, maxDepth int) bool {
 	return false
 }
 
-// FileExists checks if a file exists
+// FileExists checks if a file exists at the given path.
 func FileExists(fs afero.Fs, path string) bool {
 	_, err := fs.Stat(path)
 	return err == nil

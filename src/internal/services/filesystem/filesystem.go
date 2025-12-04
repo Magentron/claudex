@@ -1,7 +1,7 @@
-// Package fsutil provides filesystem utility functions for Claudex.
-// It includes directory copying operations with support for afero.Fs
-// abstraction for testability.
-package fsutil
+// Package filesystem provides filesystem utility functions and abstractions
+// for Claudex. It includes directory operations, file searching, and file
+// existence checks with support for afero.Fs abstraction for testability.
+package filesystem
 
 import (
 	"os"
@@ -59,4 +59,38 @@ func CopyDir(fs afero.Fs, src, dst string, noOverwrite bool) error {
 	}
 
 	return nil
+}
+
+// FindFile searches for a file in dir and subdirectories up to maxDepth
+func FindFile(fs afero.Fs, dir string, filename string, maxDepth int) bool {
+	if maxDepth < 0 {
+		return false
+	}
+
+	// Check current directory
+	if FileExists(fs, filepath.Join(dir, filename)) {
+		return true
+	}
+
+	// Search subdirectories
+	entries, err := afero.ReadDir(fs, dir)
+	if err != nil {
+		return false
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+			if FindFile(fs, filepath.Join(dir, entry.Name()), filename, maxDepth-1) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// FileExists checks if a file exists
+func FileExists(fs afero.Fs, path string) bool {
+	_, err := fs.Stat(path)
+	return err == nil
 }
