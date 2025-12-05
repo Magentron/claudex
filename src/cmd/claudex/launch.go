@@ -1,0 +1,187 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"claudex/internal/services/session"
+
+	"github.com/google/uuid"
+)
+
+// setEnvironment sets environment variables needed for Claude session
+func (a *App) setEnvironment(si SessionInfo) {
+	os.Setenv("CLAUDEX_SESSION", si.Name)
+	os.Setenv("CLAUDEX_SESSION_PATH", si.Path)
+	if len(a.docPaths) > 0 {
+		os.Setenv("CLAUDEX_DOC_PATHS", resolveDocPaths(a.docPaths))
+	}
+}
+
+// launch launches Claude based on the session info and mode
+func (a *App) launch(si SessionInfo) error {
+	// Update last used timestamp
+	if err := session.UpdateLastUsed(a.deps.FS, a.deps.Clock, si.Path); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Could not update last used timestamp: %v\n", err)
+	}
+
+	// Give terminal a moment to settle
+	time.Sleep(100 * time.Millisecond)
+
+	// Clear screen and show launching message
+	fmt.Print("\033[H\033[2J\033[3J") // Clear screen and scrollback
+	fmt.Print("\033[0m")              // Reset all attributes
+
+	switch si.Mode {
+	case LaunchModeNew:
+		return a.launchNew(si)
+	case LaunchModeResume:
+		return a.launchResume(si)
+	case LaunchModeFork:
+		return a.launchFork(si)
+	case LaunchModeFresh:
+		return a.launchFresh(si)
+	case LaunchModeEphemeral:
+		return a.launchEphemeral(si)
+	default:
+		return fmt.Errorf("unknown launch mode: %s", si.Mode)
+	}
+}
+
+// launchNew launches a new Claude session
+func (a *App) launchNew(si SessionInfo) error {
+	fmt.Printf("\n✅ Launching new Claude session\n")
+	fmt.Printf("📦 Session: %s\n", si.Name)
+	fmt.Printf("🔄 Session ID: %s\n\n", si.ClaudeID)
+
+	// Small delay before launching
+	time.Sleep(300 * time.Millisecond)
+
+	// Construct relative session path for activation command
+	relativeSessionPath := filepath.Join("sessions", filepath.Base(si.Path))
+	activationPrompt := fmt.Sprintf("/agents:team-lead activate in session %s", relativeSessionPath)
+	if len(a.docPaths) > 0 {
+		activationPrompt += fmt.Sprintf(" with documentation %s", strings.Join(a.docPaths, ", "))
+	}
+
+	// Launch the Claude session with activation command
+	return launchClaude(a.deps, si.ClaudeID, activationPrompt)
+}
+
+// launchResume resumes an existing Claude session
+func (a *App) launchResume(si SessionInfo) error {
+	fmt.Printf("\n✅ Resuming Claude session\n")
+	fmt.Printf("📦 Session: %s\n", si.Name)
+	fmt.Printf("🔄 Session ID: %s\n\n", si.ClaudeID)
+
+	// Small delay before launching
+	time.Sleep(300 * time.Millisecond)
+
+	// For resume, continue existing session
+	return resumeClaude(a.deps, si.ClaudeID)
+}
+
+// launchFork launches a forked Claude session
+func (a *App) launchFork(si SessionInfo) error {
+	fmt.Printf("\n✅ Launching forked session\n")
+	fmt.Printf("📦 Session: %s\n", si.Name)
+	fmt.Printf("🔄 Session ID: %s\n\n", si.ClaudeID)
+
+	// Small delay before launching
+	time.Sleep(300 * time.Millisecond)
+
+	// For fork, start a new session with activation command
+	relativeSessionPath := filepath.Join("sessions", filepath.Base(si.Path))
+	activationPrompt := fmt.Sprintf("/agents:team-lead activate in session %s", relativeSessionPath)
+	if len(a.docPaths) > 0 {
+		activationPrompt += fmt.Sprintf(" with documentation %s", strings.Join(a.docPaths, ", "))
+	}
+
+	return launchClaude(a.deps, si.ClaudeID, activationPrompt)
+}
+
+// launchFresh launches a fresh memory session
+func (a *App) launchFresh(si SessionInfo) error {
+	fmt.Printf("\n🔄 Launching fresh memory session\n")
+	fmt.Printf("📦 Session: %s\n", si.Name)
+	fmt.Printf("🔄 Session ID: %s\n\n", si.ClaudeID)
+
+	// Small delay before launching
+	time.Sleep(300 * time.Millisecond)
+
+	// For fresh, start a new session with activation command
+	relativeSessionPath := filepath.Join("sessions", filepath.Base(si.Path))
+	activationPrompt := fmt.Sprintf("/agents:team-lead activate in session %s", relativeSessionPath)
+	if len(a.docPaths) > 0 {
+		activationPrompt += fmt.Sprintf(" with documentation %s", strings.Join(a.docPaths, ", "))
+	}
+
+	return launchClaude(a.deps, si.ClaudeID, activationPrompt)
+}
+
+// launchEphemeral launches an ephemeral session
+func (a *App) launchEphemeral(si SessionInfo) error {
+	// Give terminal a moment to settle
+	time.Sleep(100 * time.Millisecond)
+
+	// Clear screen and show launching message
+	fmt.Print("\033[H\033[2J\033[3J") // Clear screen and scrollback
+	fmt.Print("\033[0m")              // Reset all attributes
+	fmt.Printf("\n✅ Launching Claude with team-lead\n")
+	fmt.Printf("📦 Session: %s\n", si.Name)
+
+	// Generate new Claude session ID
+	claudeSessionID := uuid.New().String()
+
+	// Rename session directory to include Claude session ID
+	err := session.RenameWithClaudeID(a.deps.FS, si.Path, claudeSessionID)
+	if err != nil {
+		return fmt.Errorf("error renaming session directory: %w", err)
+	}
+
+	// Calculate new session path after rename
+	sessionName := filepath.Base(si.Path)
+	baseSessionName := session.StripClaudeSessionID(sessionName)
+	newDirName := fmt.Sprintf("%s-%s", baseSessionName, claudeSessionID)
+	newSessionPath := filepath.Join(filepath.Dir(si.Path), newDirName)
+
+	// Update environment variable with new path
+	os.Setenv("CLAUDEX_SESSION_PATH", newSessionPath)
+	fmt.Printf("📁 Session directory: %s\n", filepath.Base(newSessionPath))
+	fmt.Printf("🔄 Session ID: %s\n\n", claudeSessionID)
+
+	// Update last used timestamp
+	if err := session.UpdateLastUsed(a.deps.FS, a.deps.Clock, newSessionPath); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Could not update last used timestamp: %v\n", err)
+	}
+
+	// Small delay before launching
+	time.Sleep(300 * time.Millisecond)
+
+	// Construct relative session path for activation command
+	relativeSessionPath := filepath.Join("sessions", filepath.Base(newSessionPath))
+	activationPrompt := fmt.Sprintf("/agents:team-lead activate in session %s", relativeSessionPath)
+	if len(a.docPaths) > 0 {
+		activationPrompt += fmt.Sprintf(" with documentation %s", strings.Join(a.docPaths, ", "))
+	}
+
+	// Launch the Claude session with activation command
+	return launchClaude(a.deps, claudeSessionID, activationPrompt)
+}
+
+// launchClaude launches a Claude CLI session with the provided session ID and activation prompt
+func launchClaude(deps *Dependencies, sessionID string, activationPrompt string) error {
+	args := []string{"--session-id", sessionID}
+	if activationPrompt != "" {
+		args = append(args, activationPrompt)
+	}
+	return deps.Cmd.Start("claude", os.Stdin, os.Stdout, os.Stderr, args...)
+}
+
+// resumeClaude resumes an existing Claude CLI session
+func resumeClaude(deps *Dependencies, sessionID string) error {
+	return deps.Cmd.Start("claude", os.Stdin, os.Stdout, os.Stderr, "--resume", sessionID)
+}
