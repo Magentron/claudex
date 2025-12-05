@@ -25,59 +25,13 @@ func Test_Execute_CopiesDirectoryAndCreatesNewSession(t *testing.T) {
 		"execution-plan.md":  "# Plan\n...",
 	})
 
-	// Mock UUID generator
-	h.UUIDs = []string{"new-uuid-aaaa-bbbb-cccc-dddd-eeeeeeeeeeee"}
-
-	// Create usecase and exercise
-	uc := New(h.FS, h.Commander, h, sessionsDir)
-	newSessionName, newSessionPath, claudeSessionID, err := uc.Execute(originalSessionName)
-
-	// Verify
-	require.NoError(t, err)
-	require.Equal(t, "new-uuid-aaaa-bbbb-cccc-dddd-eeeeeeeeeeee", claudeSessionID)
-	require.Equal(t, "login-feature-new-uuid-aaaa-bbbb-cccc-dddd-eeeeeeeeeeee", newSessionName)
-
-	// New directory created
-	testutil.AssertDirExists(t, h.FS, newSessionPath)
-	expectedPath := filepath.Join(sessionsDir, "login-feature-new-uuid-aaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-	require.Equal(t, expectedPath, newSessionPath)
-
-	// Files copied
-	testutil.AssertFileExists(t, h.FS, filepath.Join(newSessionPath, "session-history.md"))
-	testutil.AssertFileExists(t, h.FS, filepath.Join(newSessionPath, "execution-plan.md"))
-	testutil.AssertFileContains(t, h.FS, filepath.Join(newSessionPath, "session-history.md"), "# History")
-
-	// Description remains from original
-	testutil.AssertFileExists(t, h.FS, filepath.Join(newSessionPath, ".description"))
-	testutil.AssertFileContains(t, h.FS, filepath.Join(newSessionPath, ".description"), "Original login")
-
-	// Original still exists
-	testutil.AssertDirExists(t, h.FS, originalSessionPath)
-}
-
-// Test_ExecuteWithDescription_UpdatesDescription tests fork with new description
-func Test_ExecuteWithDescription_UpdatesDescription(t *testing.T) {
-	// Setup
-	h := testutil.NewTestHarness()
-	originalSessionName := "login-feature-12345678-abcd-ef12-3456-7890abcdef12"
-	sessionsDir := "/project/sessions"
-
-	// Create original session with files
-	originalSessionPath := filepath.Join(sessionsDir, originalSessionName)
-	h.CreateSessionWithFiles(originalSessionPath, map[string]string{
-		".description":       "Original login",
-		".created":           "2024-01-10T10:00:00Z",
-		"session-history.md": "# History\n...",
-		"execution-plan.md":  "# Plan\n...",
-	})
-
 	// Mock commander to return slug for new description
 	h.Commander.OnPattern("claude", "-p").Return([]byte("auth-refactor"), nil)
 	h.UUIDs = []string{"new-uuid-aaaa-bbbb-cccc-dddd-eeeeeeeeeeee"}
 
 	// Create usecase and exercise
 	uc := New(h.FS, h.Commander, h, sessionsDir)
-	newSessionName, newSessionPath, claudeSessionID, err := uc.ExecuteWithDescription(
+	newSessionName, newSessionPath, claudeSessionID, err := uc.Execute(
 		originalSessionName, "Refactor to OAuth",
 	)
 

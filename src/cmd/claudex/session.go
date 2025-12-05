@@ -174,7 +174,7 @@ func (a *App) handleResumeOrFork(fm *ui.Model) (SessionInfo, error) {
 
 		// Use fork usecase with description
 		forkUC := forkuc.New(a.deps.FS, a.deps.Cmd, a.deps.UUID, a.sessionsDir)
-		newSessionName, newSessionPath, newClaudeSessionID, err := forkUC.ExecuteWithDescription(fm.SessionName, forkDescription)
+		newSessionName, newSessionPath, newClaudeSessionID, err := forkUC.Execute(fm.SessionName, forkDescription)
 		if err != nil {
 			return SessionInfo{}, fmt.Errorf("failed to fork session: %w", err)
 		}
