@@ -1,7 +1,5 @@
 # Claudex
 
-A modern, interactive session manager for Claude Code with AI-powered agent profiles.
-
 ## Features
 
 ### 🗂️ Persistent Sessions
