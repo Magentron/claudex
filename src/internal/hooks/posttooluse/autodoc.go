@@ -11,26 +11,23 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	// UpdateFrequency determines how often auto-doc updates run (every N tool uses)
-	UpdateFrequency = 5
-)
-
 // AutoDocHandler implements frequency-controlled documentation updates
 type AutoDocHandler struct {
-	fs      afero.Fs
-	env     env.Environment
-	updater doc.DocumentationUpdater
-	logger  *shared.Logger
+	fs        afero.Fs
+	env       env.Environment
+	updater   doc.DocumentationUpdater
+	logger    *shared.Logger
+	frequency int
 }
 
 // NewAutoDocHandler creates a new AutoDocHandler instance
-func NewAutoDocHandler(fs afero.Fs, env env.Environment, updater doc.DocumentationUpdater, logger *shared.Logger) *AutoDocHandler {
+func NewAutoDocHandler(fs afero.Fs, env env.Environment, updater doc.DocumentationUpdater, logger *shared.Logger, frequency int) *AutoDocHandler {
 	return &AutoDocHandler{
-		fs:      fs,
-		env:     env,
-		updater: updater,
-		logger:  logger,
+		fs:        fs,
+		env:       env,
+		updater:   updater,
+		logger:    logger,
+		frequency: frequency,
 	}
 }
 
@@ -51,10 +48,10 @@ func (h *AutoDocHandler) Handle(input *shared.PostToolUseInput) (*shared.HookOut
 		return h.allowOutput(), nil
 	}
 
-	_ = h.logger.LogInfo(fmt.Sprintf("Auto-doc counter: %d/%d", newCount, UpdateFrequency))
+	_ = h.logger.LogInfo(fmt.Sprintf("Auto-doc counter: %d/%d", newCount, h.frequency))
 
 	// Check if we've reached the threshold
-	if newCount < UpdateFrequency {
+	if newCount < h.frequency {
 		return h.allowOutput(), nil
 	}
 

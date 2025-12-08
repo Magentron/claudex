@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"claudex/internal/doc"
 	"claudex/internal/hooks/notification"
@@ -129,7 +130,15 @@ func handleAutoDoc(fs afero.Fs, cmdr commander.Commander, environ env.Environmen
 	// Create documentation updater
 	updater := doc.NewUpdater(fs, cmdr, environ)
 
-	handler := posttooluse.NewAutoDocHandler(fs, environ, updater, logger)
+	// Read frequency from environment (default 5)
+	frequency := 5
+	if freqStr := environ.Get("CLAUDEX_AUTODOC_FREQUENCY"); freqStr != "" {
+		if freq, err := strconv.Atoi(freqStr); err == nil && freq > 0 {
+			frequency = freq
+		}
+	}
+
+	handler := posttooluse.NewAutoDocHandler(fs, environ, updater, logger, frequency)
 	output, err := handler.Handle(input)
 	if err != nil {
 		return err
