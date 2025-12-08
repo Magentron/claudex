@@ -1,10 +1,7 @@
-package main
+package app
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
 
 	"claudex/internal/services/session"
 	"claudex/internal/ui"
@@ -74,25 +71,24 @@ func (a *App) showSessionSelector() (*ui.Model, error) {
 
 // handleNewSession processes the "Create New Session" choice
 func (a *App) handleNewSession() (SessionInfo, error) {
-	// Prompt for description
-	description, err := a.promptNewSessionDescription()
+	// UI: collect input
+	description, err := ui.PromptDescription("Create New Session", "")
 	if err != nil {
 		return SessionInfo{}, err
 	}
 
-	fmt.Println()
-	fmt.Println("\033[90m  Generating session name...\033[0m")
+	// UI: show loading
+	ui.ShowGenerating()
 
-	// Create the session using new usecase
+	// Controller: route to usecase
 	newSessionUC := newuc.New(a.deps.FS, a.deps.Cmd, a.deps.UUID, a.deps.Clock, a.sessionsDir)
 	sessionName, sessionPath, claudeSessionID, err := newSessionUC.Execute(description)
 	if err != nil {
 		return SessionInfo{}, fmt.Errorf("failed to create new session: %w", err)
 	}
 
-	fmt.Println()
-	fmt.Printf("\033[1;32m  Created: %s\033[0m\n", sessionName)
-	fmt.Println()
+	// UI: show result
+	ui.ShowSessionCreated(sessionName)
 
 	return SessionInfo{
 		Name:     sessionName,
@@ -100,28 +96,6 @@ func (a *App) handleNewSession() (SessionInfo, error) {
 		ClaudeID: claudeSessionID,
 		Mode:     LaunchModeNew,
 	}, nil
-}
-
-// promptNewSessionDescription prompts user for new session description
-func (a *App) promptNewSessionDescription() (string, error) {
-	fmt.Print("\033[H\033[2J") // Clear screen
-	fmt.Println()
-	fmt.Println("\033[1;36m Create New Session \033[0m")
-	fmt.Println()
-	fmt.Print("  Description: ")
-
-	reader := bufio.NewReader(os.Stdin)
-	description, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-	description = strings.TrimSpace(description)
-
-	if description == "" {
-		return "", fmt.Errorf("description cannot be empty")
-	}
-
-	return description, nil
 }
 
 // handleResumeOrFork processes resume/fork/fresh choices for existing sessions
@@ -176,7 +150,7 @@ func (a *App) handleResumeOrFork(fm *ui.Model) (SessionInfo, error) {
 			if err != nil {
 				return SessionInfo{}, fmt.Errorf("failed to create fresh session: %w", err)
 			}
-			fmt.Printf("\n🔄 Fresh memory: %s → %s (original deleted)\n", fm.SessionName, newSessionName)
+			ui.ShowFreshMemory(fm.SessionName, newSessionName)
 
 			return SessionInfo{
 				Name:         newSessionName,
@@ -202,18 +176,21 @@ func (a *App) handleResumeOrFork(fm *ui.Model) (SessionInfo, error) {
 
 	// Handle fork choice
 	if resumeOrForkChoice == "fork" {
-		forkDescription, err := a.promptForkDescription(fm.SessionName)
+		// UI: collect input
+		forkDescription, err := ui.PromptDescription("Fork Session", fm.SessionName)
 		if err != nil {
 			return SessionInfo{}, err
 		}
 
-		// Use fork usecase with description
+		// Controller: route to usecase
 		forkUC := forkuc.New(a.deps.FS, a.deps.Cmd, a.deps.UUID, a.sessionsDir)
 		newSessionName, newSessionPath, newClaudeSessionID, err := forkUC.Execute(fm.SessionName, forkDescription)
 		if err != nil {
 			return SessionInfo{}, fmt.Errorf("failed to fork session: %w", err)
 		}
-		fmt.Printf("\n✅ Forked session: %s → %s\n", fm.SessionName, newSessionName)
+
+		// UI: show result
+		ui.ShowSessionForked(fm.SessionName, newSessionName)
 
 		return SessionInfo{
 			Name:         newSessionName,
@@ -265,25 +242,3 @@ func (a *App) showResumeSubmenu(sessionName, sessionPath string) (string, error)
 	return rsm.Choice, nil
 }
 
-// promptForkDescription prompts the user for a fork description
-func (a *App) promptForkDescription(original string) (string, error) {
-	fmt.Print("\033[H\033[2J") // Clear screen
-	fmt.Println()
-	fmt.Println("\033[1;36m Fork Session \033[0m")
-	fmt.Printf("  Original: %s\n", original)
-	fmt.Println()
-
-	fmt.Print("  Description for fork: ")
-	reader := bufio.NewReader(os.Stdin)
-	forkDescription, err := reader.ReadString('\n')
-	if err != nil {
-		return "", fmt.Errorf("error reading description: %w", err)
-	}
-	forkDescription = strings.TrimSpace(forkDescription)
-
-	if forkDescription == "" {
-		return "", fmt.Errorf("description cannot be empty")
-	}
-
-	return forkDescription, nil
-}

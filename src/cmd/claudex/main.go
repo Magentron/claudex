@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"claudex/internal/services/app"
 )
 
 // Version is set at build time via -ldflags
@@ -25,15 +27,15 @@ func init() {
 }
 
 func main() {
-	app := NewApp()
+	application := app.New(Version, showVersion, noOverwrite, docPaths)
 
-	if err := app.Init(); err != nil {
+	if err := application.Init(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	defer app.Close()
+	defer application.Close()
 
-	if err := app.Run(); err != nil {
+	if err := application.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}

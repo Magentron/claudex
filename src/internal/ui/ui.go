@@ -4,9 +4,12 @@
 package ui
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"claudex/internal/services/session"
 
@@ -89,13 +92,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i, ok := m.List.SelectedItem().(SessionItem)
 			if ok {
 				m.Choice = i.Title
-				if m.Stage == "session" {
+				switch m.Stage {
+				case "session":
 					return m, m.handleSessionChoice(i)
-				} else if m.Stage == "profile" {
+				case "profile":
 					return m, m.handleProfileChoice(i)
-				} else if m.Stage == "resume_or_fork" {
+				case "resume_or_fork":
 					return m, m.handleResumeOrForkChoice(i)
-				} else if m.Stage == "resume_submenu" {
+				case "resume_submenu":
 					return m, m.handleResumeSubmenuChoice(i)
 				}
 			}
@@ -222,4 +226,65 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 // Exported styles for external use
 func TitleStyle() lipgloss.Style {
 	return titleStyle
+}
+
+// UI Functions for Session Flow
+// These functions handle pure UI concerns - rendering prompts, collecting input, displaying results
+
+// PromptDescription shows a prompt screen and collects user input
+// Parameters: title (e.g., "Create New Session" or "Fork Session"), originalSession (optional, for fork context)
+// Returns: description string, error
+func PromptDescription(title string, originalSession string) (string, error) {
+	fmt.Print("\033[H\033[2J") // Clear screen
+	fmt.Println()
+	fmt.Printf("\033[1;36m %s \033[0m\n", title)
+	if originalSession != "" {
+		fmt.Printf("  Original: %s\n", originalSession)
+	}
+	fmt.Println()
+
+	promptText := "  Description: "
+	if originalSession != "" {
+		promptText = "  Description for fork: "
+	}
+	fmt.Print(promptText)
+
+	reader := bufio.NewReader(os.Stdin)
+	description, err := reader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	description = strings.TrimSpace(description)
+
+	if description == "" {
+		return "", fmt.Errorf("description cannot be empty")
+	}
+
+	return description, nil
+}
+
+// ShowGenerating displays "Generating session name..." message
+func ShowGenerating() {
+	fmt.Println()
+	fmt.Println("\033[90m  Generating session name...\033[0m")
+}
+
+// ShowSessionCreated displays success message for new session
+// Parameters: sessionName
+func ShowSessionCreated(sessionName string) {
+	fmt.Println()
+	fmt.Printf("\033[1;32m  Created: %s\033[0m\n", sessionName)
+	fmt.Println()
+}
+
+// ShowSessionForked displays success message for forked session
+// Parameters: originalName, newName
+func ShowSessionForked(originalName, newName string) {
+	fmt.Printf("\n\033[1;32m✅ Forked session: %s → %s\033[0m\n", originalName, newName)
+}
+
+// ShowFreshMemory displays success message for fresh memory
+// Parameters: originalName, newName
+func ShowFreshMemory(originalName, newName string) {
+	fmt.Printf("\n\033[1;32m🔄 Fresh memory: %s → %s (original deleted)\033[0m\n", originalName, newName)
 }

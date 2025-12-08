@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"flag"
@@ -38,44 +38,27 @@ type SessionInfo struct {
 
 // App is the main application container
 type App struct {
-	deps        *Dependencies
-	cfg         *config.Config
-	projectDir  string
-	sessionsDir string
-	docPaths    []string
-	noOverwrite bool
-	logFile     *os.File
+	deps            *Dependencies
+	cfg             *config.Config
+	projectDir      string
+	sessionsDir     string
+	docPaths        []string
+	noOverwrite     bool
+	logFile         *os.File
+	version         string
+	showVersion     *bool
+	noOverwriteFlag *bool
+	docPathsFlag    []string
 }
 
-// isFlagSet checks if a flag was explicitly set by the user
-func isFlagSet(name string) bool {
-	found := false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == name {
-			found = true
-		}
-	})
-	return found
-}
-
-// resolveDocPaths converts a list of documentation paths to absolute paths
-// and joins them with colon separators (Unix PATH convention)
-func resolveDocPaths(paths []string) string {
-	var resolved []string
-	for _, p := range paths {
-		absPath, err := filepath.Abs(p)
-		if err != nil {
-			absPath = p
-		}
-		resolved = append(resolved, absPath)
-	}
-	return strings.Join(resolved, ":")
-}
-
-// NewApp creates a new App instance with production dependencies
-func NewApp() *App {
+// New creates a new App instance with production dependencies
+func New(version string, showVersion *bool, noOverwrite *bool, docPaths []string) *App {
 	return &App{
-		deps: NewDependencies(),
+		deps:            NewDependencies(),
+		version:         version,
+		showVersion:     showVersion,
+		noOverwriteFlag: noOverwrite,
+		docPathsFlag:    docPaths,
 	}
 }
 
@@ -91,8 +74,8 @@ func (a *App) Init() error {
 
 	flag.Parse()
 
-	if *showVersion {
-		fmt.Printf("claudex %s\n", Version)
+	if *a.showVersion {
+		fmt.Printf("claudex %s\n", a.version)
 		os.Exit(0)
 	}
 
@@ -100,12 +83,12 @@ func (a *App) Init() error {
 	if !isFlagSet("doc") && len(cfg.Doc) > 0 {
 		a.docPaths = cfg.Doc
 	} else {
-		a.docPaths = docPaths
+		a.docPaths = a.docPathsFlag
 	}
 	if !isFlagSet("no-overwrite") && cfg.NoOverwrite {
 		a.noOverwrite = cfg.NoOverwrite
 	} else {
-		a.noOverwrite = *noOverwrite
+		a.noOverwrite = *a.noOverwriteFlag
 	}
 
 	projectDir, err := os.Getwd()
@@ -220,4 +203,29 @@ func (a *App) Run() error {
 	// Set environment and launch
 	a.setEnvironment(si)
 	return a.launch(si)
+}
+
+// isFlagSet checks if a flag was explicitly set by the user
+func isFlagSet(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
+}
+
+// resolveDocPaths converts a list of documentation paths to absolute paths
+// and joins them with colon separators (Unix PATH convention)
+func resolveDocPaths(paths []string) string {
+	var resolved []string
+	for _, p := range paths {
+		absPath, err := filepath.Abs(p)
+		if err != nil {
+			absPath = p
+		}
+		resolved = append(resolved, absPath)
+	}
+	return strings.Join(resolved, ":")
 }
