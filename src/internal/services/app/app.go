@@ -7,13 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"claudex"
 	"claudex/internal/services/config"
 	"claudex/internal/services/profile"
 	"claudex/internal/services/session"
 	setupuc "claudex/internal/usecases/setup"
+	"github.com/spf13/afero"
 )
 
 // LaunchMode represents how Claude should be started
@@ -44,7 +44,8 @@ type App struct {
 	sessionsDir     string
 	docPaths        []string
 	noOverwrite     bool
-	logFile         *os.File
+	logFile         afero.File
+	logFilePath     string
 	version         string
 	showVersion     *bool
 	noOverwriteFlag *bool
@@ -106,34 +107,35 @@ func (a *App) Init() error {
 
 	// Setup centralized logging
 	logsDir := filepath.Join(projectDir, "logs")
-	if err := os.MkdirAll(logsDir, 0755); err != nil {
+	if err := a.deps.FS.MkdirAll(logsDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: Could not create logs directory: %v\n", err)
 	}
 
 	// Create unique log file for this execution
-	timestamp := time.Now().Format("20060102-150405")
+	timestamp := a.deps.Clock.Now().Format("20060102-150405")
 	logFileName := fmt.Sprintf("claudex-%s.log", timestamp)
 	logFilePath := filepath.Join(logsDir, logFileName)
 
 	// Open log file
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logFile, err := a.deps.FS.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: Could not open log file: %v\n", err)
 	} else {
 		a.logFile = logFile
+		a.logFilePath = logFilePath
 		// Configure Go logger with [claudex] prefix
 		log.SetOutput(logFile)
 		log.SetPrefix("[claudex] ")
 		log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 
 		// Set environment variable for hooks
-		os.Setenv("CLAUDEX_LOG_FILE", logFilePath)
+		a.deps.Env.Set("CLAUDEX_LOG_FILE", logFilePath)
 
 		log.Printf("Claudex started (log file: %s)", logFileName)
 	}
 
 	// Create sessions directory
-	if err := os.MkdirAll(a.sessionsDir, 0755); err != nil {
+	if err := a.deps.FS.MkdirAll(a.sessionsDir, 0755); err != nil {
 		return fmt.Errorf("failed to create sessions directory: %w", err)
 	}
 
@@ -145,6 +147,63 @@ func (a *App) Close() {
 	if a.logFile != nil {
 		a.logFile.Close()
 	}
+}
+
+// renameLogFileForSession renames the log file to match the session name.
+// For ephemeral sessions (empty path), the timestamp-based name is preserved.
+func (a *App) renameLogFileForSession(si SessionInfo) {
+	// Skip for ephemeral sessions
+	if si.Path == "" || a.logFilePath == "" {
+		return
+	}
+
+	// Build new log file path: logs/{session-name}.log
+	logsDir := filepath.Dir(a.logFilePath)
+	newLogFileName := si.Name + ".log"
+	newLogFilePath := filepath.Join(logsDir, newLogFileName)
+
+	// Close current log file first
+	if a.logFile != nil {
+		a.logFile.Close()
+	}
+
+	// Check if we need to rename or if target already exists
+	if a.logFilePath != newLogFilePath {
+		// Check if target log already exists (resume scenario)
+		if _, err := a.deps.FS.Stat(newLogFilePath); os.IsNotExist(err) {
+			// Rename current log file to session-named log
+			if err := a.deps.FS.Rename(a.logFilePath, newLogFilePath); err != nil {
+				// Rename failed, try to reopen original
+				log.Printf("Warning: Could not rename log file: %v", err)
+				a.logFile, _ = a.deps.FS.OpenFile(a.logFilePath,
+					os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+				return
+			}
+		} else {
+			// Target exists (resume scenario), remove the timestamp log
+			a.deps.FS.Remove(a.logFilePath)
+		}
+	}
+
+	// Open the session-named log file (append mode)
+	logFile, err := a.deps.FS.OpenFile(newLogFilePath,
+		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Printf("Warning: Could not open renamed log file: %v", err)
+		return
+	}
+
+	// Update App state
+	a.logFile = logFile
+	a.logFilePath = newLogFilePath
+
+	// Reconfigure logger
+	log.SetOutput(logFile)
+
+	// Update environment variable
+	a.deps.Env.Set("CLAUDEX_LOG_FILE", newLogFilePath)
+
+	log.Printf("Log file associated with session: %s", si.Name)
 }
 
 // Run executes the main application logic
@@ -199,6 +258,9 @@ func (a *App) Run() error {
 	if err != nil {
 		return err
 	}
+
+	// Rename log file to match session (skip for ephemeral)
+	a.renameLogFileForSession(si)
 
 	// Set environment and launch
 	a.setEnvironment(si)
