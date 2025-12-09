@@ -3,13 +3,79 @@
 ## Features
 
 ### 🗂️ Persistent Sessions
-Work across days, weeks, or months without losing context. Claudex sessions preserve all research, plans, and artifacts in organized folders—even when Claude's memory resets. Fork sessions to explore alternatives, or use **fresh memory** to start a new conversation while keeping everything you've built.
+
+Every task starts with a session — a folder that accumulates everything Claude produces:
+
+```
+sessions/
+└── api-refactor-abc123/
+    ├── session-overview.md    ← Auto-maintained status & index
+    ├── feature-description.md ← Manually added from Jira, Linear, etc.
+    ├── research-findings.md   ← Research artifacts
+    ├── execution-plan.md      ← Architecture decisions
+    └── ...                    ← Your custom docs
+```
+
+**Why it matters:** Claude's context window fills up. When you clear it, Claude normally forgets everything. With claudex, the session folder persists — Claude reads `session-overview.md` on startup and catches up in seconds.
+
+**Session modes:**
+- **Resume** — Continue where you left off with full claude's conversation history
+- **Fresh memory** — Clear claude's context window, keep all docs (Claude catches up via overview)
+- **Fork** — Branch into a new task while cloning all the docs
 
 ### 📝 Auto-Documentation
-A background agent silently maintains a living overview of your session. Every decision, discovery, and milestone is captured automatically—no manual note-taking required. Pick up any project instantly, even after weeks away.
+
+A background agent silently maintains `session-overview.md` as you work—no manual note-taking:
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│  You work normally                                                    │
+│       ↓                                                               │
+│  Every few messages, claudex updates the session-overview.md document │
+│       ↓                                                               │
+│  Clear claude's context window                                        │
+│       ↓                                                               │
+│  Leverage full claude's potential                                     │
+└───────────────────────────────────────────────────────────────────────┘
+```
+
+```markdown
+# Session: API Refactor
+
+## Status
+Phase 2 in progress - Authentication endpoints complete
+
+## Key Decisions
+- JWT over session cookies (see research-auth.md)
+- Rate limiting at gateway level
+
+## Documents
+- [research-auth.md](./research-auth.md) — Auth strategy analysis
+- [execution-plan.md](./execution-plan.md) — Implementation phases
+```
+
+Pick up any session instantly—even weeks later. Claude reads the overview, follows the pointers, and catches up in seconds.
 
 ### 🤖 Parallel Agent Orchestration
-A team-lead agent coordinates specialized researchers, architects, and engineers. Work gets planned with parallelization in mind, then multiple engineers execute simultaneously on independent tracks. Ship faster with systematic divide-and-conquer.
+
+A team-lead agent coordinates specialists through a structured workflow:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  You describe what you need                         │
+│       ↓                                             │
+│  Researcher investigates codebase & docs            │
+│       ↓                                             │
+│  Architect creates execution plan with phases       │
+│       ↓                                             │
+│  Engineers execute in parallel:                     │
+│       ├── Track A: Auth service                     │
+│       ├── Track B: API endpoints                    │
+│       └── Track C: Database migrations              │
+└─────────────────────────────────────────────────────┘
+```
+
+Work gets broken into independent tracks. Multiple engineers execute simultaneously: divide-and-conquer.
 
 ## Prerequisites
 
@@ -90,7 +156,24 @@ autodoc_frequency = 5
 
 Environment variables override config values: `CLAUDEX_AUTODOC_SESSION_PROGRESS`, `CLAUDEX_AUTODOC_SESSION_END`, `CLAUDEX_AUTODOC_FREQUENCY`.
 
-**Tip:** Keep `doc` files lightweight. Use an `index.md` with brief descriptions and file paths—Claude will load details on demand, saving context for actual work.
+**Tip:** Keep `doc` files lightweight—they're passed to every agent. Use an index with brief descriptions and pointers:
+
+```markdown
+# Project Documentation Index
+
+## Product
+- [docs/product-overview.md](docs/product-overview.md) — Business goals, user personas, success metrics
+
+## Technology
+- [docs/architecture.md](docs/architecture.md) — System design, service boundaries, data flow
+- [docs/tech-stack.md](docs/tech-stack.md) — Languages, frameworks, infrastructure choices
+
+## Development
+- [docs/coding-standards.md](docs/coding-standards.md) — Style guide, patterns, conventions
+- [docs/testing-strategy.md](docs/testing-strategy.md) — Test types, coverage requirements
+```
+
+Claude reads the index, understands what's available, and loads detailed docs on demand—saving context for actual work.
 
 ## License
 
