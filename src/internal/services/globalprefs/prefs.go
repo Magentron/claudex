@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/afero"
 )
@@ -87,4 +88,23 @@ func (fs *FileService) Save(prefs MCPPreferences) error {
 
 	// Atomic rename
 	return fs.fs.Rename(tempPath, prefsPath)
+}
+
+// IsUpdateCacheValid returns true if cached version check is less than 24 hours old
+func (p *MCPPreferences) IsUpdateCacheValid() bool {
+	if p.UpdateCheck.LastCheckedAt == "" {
+		return false
+	}
+	lastChecked, err := time.Parse(time.RFC3339, p.UpdateCheck.LastCheckedAt)
+	if err != nil {
+		return false
+	}
+	return time.Since(lastChecked) < 24*time.Hour
+}
+
+// SetUpdateCache stores the latest version check result
+func (p *MCPPreferences) SetUpdateCache(version string, succeeded bool) {
+	p.UpdateCheck.LastCheckedAt = time.Now().Format(time.RFC3339)
+	p.UpdateCheck.CachedVersion = version
+	p.UpdateCheck.CheckSucceeded = succeeded
 }

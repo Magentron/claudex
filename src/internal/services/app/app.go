@@ -15,6 +15,7 @@ import (
 	setupuc "claudex/internal/usecases/setup"
 	setuphookuc "claudex/internal/usecases/setuphook"
 	setupmcpuc "claudex/internal/usecases/setupmcp"
+	updatecheckuc "claudex/internal/usecases/updatecheck"
 	updatedocsuc "claudex/internal/usecases/updatedocs"
 	"claudex/internal/services/mcpconfig"
 	"github.com/spf13/afero"
@@ -232,6 +233,9 @@ func (a *App) Run() error {
 		return nil
 	}
 
+	// Check for updates first (before other prompts)
+	a.promptUpdateCheck()
+
 	// Check if user wants to enable git hook integration
 	a.promptHookSetup()
 
@@ -369,6 +373,42 @@ func (a *App) promptMCPSetup() {
 			fmt.Fprintf(os.Stderr, "Warning: Could not save preference: %v\n", err)
 		}
 		fmt.Println("○ Won't ask again. Run 'claudex --setup-mcp' to configure later.")
+	default:
+		fmt.Println("○ Skipped for now.")
+	}
+	fmt.Println()
+}
+
+// promptUpdateCheck checks if we should offer to update claudex
+func (a *App) promptUpdateCheck() {
+	uc := updatecheckuc.New(a.deps.FS, a.version)
+
+	result := uc.ShouldPrompt()
+	if result != updatecheckuc.ResultPromptUser {
+		return // Nothing to prompt
+	}
+
+	// Prompt user
+	fmt.Printf("\nNew version available: %s (current: %s)\n", uc.GetLatestVersion(), uc.GetCurrentVersion())
+	fmt.Print("Update now? [y/n/never]: ")
+
+	var response string
+	fmt.Scanln(&response)
+
+	switch strings.ToLower(strings.TrimSpace(response)) {
+	case "y", "yes":
+		fmt.Println("Updating claudex...")
+		if err := a.deps.Cmd.Start("npm", os.Stdin, os.Stdout, os.Stderr, "install", "-g", "@claudex/cli@latest"); err != nil {
+			fmt.Fprintf(os.Stderr, "Update failed: %v\n", err)
+			fmt.Println("You can update manually with: npm install -g @claudex/cli@latest")
+		} else {
+			fmt.Printf("✓ Updated to %s\n", uc.GetLatestVersion())
+		}
+	case "never":
+		if err := uc.SaveNeverAsk(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not save preference: %v\n", err)
+		}
+		fmt.Println("○ Won't ask again. Run 'npm install -g @claudex/cli@latest' to update manually.")
 	default:
 		fmt.Println("○ Skipped for now.")
 	}

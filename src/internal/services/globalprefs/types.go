@@ -2,6 +2,15 @@
 // It persists preferences to ~/.config/claudex/mcp-preferences.json.
 package globalprefs
 
+// UpdatePreferences holds update check preferences and cache
+type UpdatePreferences struct {
+	NeverAskAgain  bool   `json:"neverAskAgain,omitempty"`
+	DeclinedAt     string `json:"declinedAt,omitempty"`
+	LastCheckedAt  string `json:"lastCheckedAt,omitempty"`
+	CachedVersion  string `json:"cachedVersion,omitempty"`
+	CheckSucceeded bool   `json:"checkSucceeded,omitempty"`
+}
+
 // MCPPreferences holds global MCP setup preferences
 type MCPPreferences struct {
 	// MCPSetupDeclined indicates whether user declined MCP setup
@@ -9,6 +18,9 @@ type MCPPreferences struct {
 
 	// DeclinedAt is the RFC3339 timestamp when MCP setup was declined
 	DeclinedAt string `json:"declinedAt,omitempty"`
+
+	// UpdateCheck holds update check preferences and cache
+	UpdateCheck UpdatePreferences `json:"updateCheck,omitempty"`
 }
 
 // Service abstracts global preferences persistence for testability

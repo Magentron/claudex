@@ -1,6 +1,6 @@
 # App Package
 
-Main application container for claudex CLI. Handles initialization, session lifecycle, and post-install setup for npm distribution.
+Main application container for claudex CLI. Handles initialization, session lifecycle, and npm distribution setup.
 
 ## Core
 
@@ -16,6 +16,12 @@ Main application container for claudex CLI. Handles initialization, session life
 
 - `promptHookSetup()` - Interactive git hook integration setup (auto-docs on commits)
 - `promptMCPSetup()` - Interactive MCP configuration for recommended MCPs (sequential-thinking, context7) with optional Context7 API token
+
+## NPM Distribution
+
+Post-install setup is now handled by Node.js scripts in the npm package (`@claudex/cli`):
+- `postinstall.js` - Detects platform, links platform-specific binaries from optional dependencies
+- Platform packages: `@claudex/darwin-arm64`, `@claudex/darwin-x64`, `@claudex/linux-x64`, `@claudex/linux-arm64`
 
 ## Tests
 
