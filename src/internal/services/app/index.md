@@ -1,19 +1,20 @@
-# App Module
+# App Package
 
-Application lifecycle and orchestration for Claudex.
+Main application container for claudex CLI.
 
-## Key Files
-- **app.go** - Main App container with initialization and lifecycle management
-- **launch.go** - Claude CLI launch orchestration for different session modes
-- **session.go** - Session selector TUI and session workflow handlers
-- **deps.go** - Dependency injection container for testable external dependencies
+## Core
 
-## Key Types
-- `App` - Main application container managing dependencies and lifecycle
-- `LaunchMode` - Enum for session launch modes (new, resume, fork, fresh, ephemeral)
-- `SessionInfo` - Session state holder passed between methods
-- `Dependencies` - Dependency injection container (FS, Cmd, Clock, UUID, Env)
+- `app.go` - App struct with Init/Run/Close lifecycle, config loading, logging setup, and hook prompt
+- `deps.go` - Dependencies struct for dependency injection (FS, Cmd, Clock, UUID, Env)
 
-## Usage
+## Launch
 
-The App module orchestrates the entire application flow: initialization, session selection, and Claude CLI launching. It uses dependency injection for testability and coordinates between UI, usecases, and service layers.
+- `launch.go` - Session launch modes (new, resume, fork, fresh, ephemeral) and Claude CLI invocation
+- `session.go` - Session selector TUI and handlers for new/resume/fork workflows
+
+## Tests
+
+- `app_test.go` - Tests for App initialization and run logic
+- `launch_test.go` - Tests for launch modes and Claude invocation
+nd run logic
+- **launch_test.go** - Tests for session launching behavior

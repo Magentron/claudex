@@ -13,6 +13,8 @@ import (
 	"claudex/internal/services/profile"
 	"claudex/internal/services/session"
 	setupuc "claudex/internal/usecases/setup"
+	setuphookuc "claudex/internal/usecases/setuphook"
+	updatedocsuc "claudex/internal/usecases/updatedocs"
 	"github.com/spf13/afero"
 )
 
@@ -44,21 +46,24 @@ type App struct {
 	sessionsDir     string
 	docPaths        []string
 	noOverwrite     bool
+	updateDocs      bool
 	logFile         afero.File
 	logFilePath     string
 	version         string
 	showVersion     *bool
 	noOverwriteFlag *bool
+	updateDocsFlag  *bool
 	docPathsFlag    []string
 }
 
 // New creates a new App instance with production dependencies
-func New(version string, showVersion *bool, noOverwrite *bool, docPaths []string) *App {
+func New(version string, showVersion *bool, noOverwrite *bool, updateDocs *bool, docPaths []string) *App {
 	return &App{
 		deps:            NewDependencies(),
 		version:         version,
 		showVersion:     showVersion,
 		noOverwriteFlag: noOverwrite,
+		updateDocsFlag:  updateDocs,
 		docPathsFlag:    docPaths,
 	}
 }
@@ -91,6 +96,7 @@ func (a *App) Init() error {
 	} else {
 		a.noOverwrite = *a.noOverwriteFlag
 	}
+	a.updateDocs = *a.updateDocsFlag
 
 	projectDir, err := os.Getwd()
 	if err != nil {
@@ -208,6 +214,15 @@ func (a *App) renameLogFileForSession(si SessionInfo) {
 
 // Run executes the main application logic
 func (a *App) Run() error {
+	// Early exit for --update-docs mode
+	if a.updateDocs {
+		uc := updatedocsuc.New(a.deps.FS, a.deps.Cmd, a.deps.Env)
+		return uc.Execute(a.projectDir)
+	}
+
+	// Check if user wants to enable git hook integration
+	a.promptHookSetup()
+
 	// Load team-lead profile directly (skip profile selection menu)
 	_, err := profile.LoadComposed(claudex.Profiles, "team-lead")
 	if err != nil {
@@ -265,6 +280,39 @@ func (a *App) Run() error {
 	// Set environment and launch
 	a.setEnvironment(si, a.cfg)
 	return a.launch(si)
+}
+
+// promptHookSetup checks if we should offer git hook integration
+func (a *App) promptHookSetup() {
+	uc := setuphookuc.New(a.deps.FS, a.projectDir, a.deps.Cmd)
+
+	result := uc.ShouldPrompt()
+	if result != setuphookuc.ResultPromptUser {
+		return // Nothing to prompt
+	}
+
+	// Simple prompt using fmt (not TUI - keep it lightweight)
+	fmt.Print("\n📝 Enable auto-docs update after git commits? [y/n/never]: ")
+
+	var response string
+	fmt.Scanln(&response)
+
+	switch strings.ToLower(strings.TrimSpace(response)) {
+	case "y", "yes":
+		if err := uc.Install(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not install hook: %v\n", err)
+		} else {
+			fmt.Println("✓ Git hook installed. Docs will auto-update after commits.")
+		}
+	case "never":
+		if err := uc.SaveDeclined(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not save preference: %v\n", err)
+		}
+		fmt.Println("○ Won't ask again. Run 'claudex --setup-hook' to enable later.")
+	default:
+		fmt.Println("○ Skipped for now.")
+	}
+	fmt.Println()
 }
 
 // isFlagSet checks if a flag was explicitly set by the user

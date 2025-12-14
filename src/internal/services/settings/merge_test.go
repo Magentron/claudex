@@ -34,10 +34,6 @@ func TestMergeSettings(t *testing.T) {
           {
             "type": "command",
             "command": ".claude/hooks/auto-doc-updater.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/index-updater.sh"
           }
         ]
       }
@@ -88,17 +84,17 @@ func TestMergeSettings(t *testing.T) {
 					t.Errorf("expected %d hook types, got %d", len(templateSettings.Hooks), len(resultSettings.Hooks))
 				}
 
-				// Verify PostToolUse has 3 hooks
+				// Verify PostToolUse has 2 hooks
 				postToolUse := resultSettings.Hooks["PostToolUse"]
-				if len(postToolUse) == 0 || len(postToolUse[0].Hooks) != 3 {
-					t.Errorf("expected 3 PostToolUse hooks, got %d", len(postToolUse[0].Hooks))
+				if len(postToolUse) == 0 || len(postToolUse[0].Hooks) != 2 {
+					t.Errorf("expected 2 PostToolUse hooks, got %d", len(postToolUse[0].Hooks))
 				}
 			},
 		},
 		{
 			name:        "ExistingSubset",
 			template:    templateJSON,
-			description: "5 template hooks, 2 existing → adds 3 missing",
+			description: "4 template hooks, 1 existing → adds 3 missing",
 			existing: []byte(`{
   "permissions": {
     "allow": [],
@@ -112,10 +108,6 @@ func TestMergeSettings(t *testing.T) {
           {
             "type": "command",
             "command": ".claude/hooks/post-tool-use.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/auto-doc-updater.sh"
           }
         ]
       }
@@ -137,7 +129,7 @@ func TestMergeSettings(t *testing.T) {
 					t.Errorf("expected 3 hook types, got %d", len(resultSettings.Hooks))
 				}
 
-				// PostToolUse should now have 3 hooks (2 existing + 1 missing)
+				// PostToolUse should now have 2 hooks (1 existing + 1 missing)
 				postToolUse := resultSettings.Hooks["PostToolUse"]
 				if len(postToolUse) == 0 {
 					t.Fatalf("PostToolUse hooks missing")
@@ -148,21 +140,8 @@ func TestMergeSettings(t *testing.T) {
 					totalHooks += len(entry.Hooks)
 				}
 
-				if totalHooks != 3 {
-					t.Errorf("expected 3 PostToolUse hooks, got %d", totalHooks)
-				}
-
-				// Should have index-updater.sh (the missing one)
-				hasIndexUpdater := false
-				for _, entry := range postToolUse {
-					for _, hook := range entry.Hooks {
-						if hook.Command == ".claude/hooks/index-updater.sh" {
-							hasIndexUpdater = true
-						}
-					}
-				}
-				if !hasIndexUpdater {
-					t.Error("missing hook index-updater.sh was not added")
+				if totalHooks != 2 {
+					t.Errorf("expected 2 PostToolUse hooks, got %d", totalHooks)
 				}
 
 				// Should have SessionEnd from template
@@ -201,15 +180,15 @@ func TestMergeSettings(t *testing.T) {
 					t.Errorf("expected %d hook types, got %d", len(templateSettings.Hooks), len(resultSettings.Hooks))
 				}
 
-				// PostToolUse should still have exactly 3 hooks (no duplicates)
+				// PostToolUse should still have exactly 2 hooks (no duplicates)
 				postToolUse := resultSettings.Hooks["PostToolUse"]
 				totalHooks := 0
 				for _, entry := range postToolUse {
 					totalHooks += len(entry.Hooks)
 				}
 
-				if totalHooks != 3 {
-					t.Errorf("expected 3 PostToolUse hooks (no duplicates), got %d", totalHooks)
+				if totalHooks != 2 {
+					t.Errorf("expected 2 PostToolUse hooks (no duplicates), got %d", totalHooks)
 				}
 			},
 		},
@@ -230,10 +209,6 @@ func TestMergeSettings(t *testing.T) {
           {
             "type": "command",
             "command": ".claude/hooks/post-tool-use.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/auto-doc-updater.sh"
           },
           {
             "type": "command",
@@ -283,16 +258,16 @@ func TestMergeSettings(t *testing.T) {
 					t.Error("custom user hook was not preserved")
 				}
 
-				// Should also have the missing template hook (index-updater.sh)
-				hasIndexUpdater := false
+				// Should also have the missing template hook (auto-doc-updater.sh)
+				hasAutoDoc := false
 				for _, entry := range postToolUse {
 					for _, hook := range entry.Hooks {
-						if hook.Command == ".claude/hooks/index-updater.sh" {
-							hasIndexUpdater = true
+						if hook.Command == ".claude/hooks/auto-doc-updater.sh" {
+							hasAutoDoc = true
 						}
 					}
 				}
-				if !hasIndexUpdater {
+				if !hasAutoDoc {
 					t.Error("missing template hook was not added")
 				}
 			},
@@ -415,8 +390,8 @@ func TestMergeSettings(t *testing.T) {
 				}
 
 				// Verify no duplicates after second merge
-				if secondCount != 3 {
-					t.Errorf("expected 3 hooks after idempotent merge, got %d", secondCount)
+				if secondCount != 2 {
+					t.Errorf("expected 2 hooks after idempotent merge, got %d", secondCount)
 				}
 			},
 		},
@@ -441,10 +416,6 @@ func TestMergeSettings(t *testing.T) {
           {
             "type": "command",
             "command": ".claude/hooks/auto-doc-updater.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/index-updater.sh"
           }
         ]
       }
@@ -478,9 +449,9 @@ func TestMergeSettings(t *testing.T) {
 					}
 				}
 
-				// Should have exactly 3 unique hooks
-				if len(commandCounts) != 3 {
-					t.Errorf("expected 3 unique hooks, got %d", len(commandCounts))
+				// Should have exactly 2 unique hooks
+				if len(commandCounts) != 2 {
+					t.Errorf("expected 2 unique hooks, got %d", len(commandCounts))
 				}
 			},
 		},

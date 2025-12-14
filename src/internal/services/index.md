@@ -1,14 +1,38 @@
-# Services Layer
+Now I understand the structure and style. Let me generate the updated content:
 
-Core services and abstractions for application infrastructure.
+```markdown
+# Services
 
-## Modules
+Application service layer providing infrastructure and domain-specific operations.
 
-- [App](./app/index.md) - Application lifecycle and orchestration
-- [Session](./session/index.md) - Session management and metadata operations
-- [Config](./config/index.md) - Configuration loading and parsing
-- [Profile](./profile/index.md) - Profile loading and composition
+## Core Dependencies
 
-## Purpose
+- `app/` - Main application container, session lifecycle, and Claude CLI integration
+- `config/` - TOML configuration loading and parsing for .claudex.toml files
+- `settings/` - Claude Code settings.json management and smart-merge operations
 
-The services layer provides infrastructure abstractions and dependency injection for core application functionality. It handles configuration, session management, profile loading, and application lifecycle.
+## Infrastructure
+
+- `clock/` - Time abstraction for testability
+- `commander/` - Process execution abstraction (Run, Start)
+- `env/` - Environment variable access abstraction
+- `filesystem/` - Directory copy, file search, and existence checks with afero
+- `uuid/` - UUID generation abstraction
+
+## Git & Version Control
+
+- `git/` - Git operations (commit SHA, changed files, merge base, commit validation)
+- `hooksetup/` - Post-commit hook installation for documentation updates
+
+## Session & State
+
+- `session/` - Session retrieval, listing, naming, and metadata operations
+- `doctracking/` - Documentation update tracking state (last commit, timestamps)
+- `lock/` - File-based cross-process locking with atomic acquisition
+- `preferences/` - Project preferences storage (.claudex/preferences.json)
+
+## Detection & Profiles
+
+- `profile/` - Agent profile loading and composition from embedded/filesystem sources
+- `stackdetect/` - Technology stack detection (TypeScript, Go, Python) via marker files
+```

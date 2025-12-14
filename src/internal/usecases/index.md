@@ -1,10 +1,12 @@
-# Usecases Layer
+Now I have all the information needed. Here's the updated index.md:
 
-Business logic orchestration layer that coordinates services to implement complete user workflows.
+# UseCases
 
-## Usecases
+Application use cases implementing core business logic workflows.
 
-- [**setup/**](./setup/) - Project initialization with .claude directory structure
-- [**session/new/**](./session/new/) - New session creation with UUID and metadata
-- [**session/resume/fork/**](./session/resume/fork/) - Session forking with new description
-- [**session/resume/fresh/**](./session/resume/fresh/) - Fresh memory session by clearing history
+## Directories
+
+- **session/** - Session lifecycle management (new, resume)
+- **setup/** - .claude directory initialization with hooks, agents, and configuration
+- **setuphook/** - Hook installation detection and user preference management
+- **updatedocs/** - Git-based index.md documentation updates

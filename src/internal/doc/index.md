@@ -1,23 +1,22 @@
-# Documentation Updater
+# doc
 
-Background documentation generation system that invokes Claude to update session documentation based on transcript increments.
+Documentation generation and update services for Claudex sessions.
 
-## Key Files
+## Core Files
 
-- **interface.go** - DocumentationUpdater interface
-- **updater.go** - Updater implementation with background/synchronous execution
-- **transcript.go** - JSONL transcript parsing and formatting
-- **prompts.go** - Prompt template loading and variable substitution
+- `interface.go` - DocumentationUpdater interface definition
+- `updater.go` - Background Claude invocation for documentation updates
+- `transcript.go` - JSONL transcript parsing and formatting
+- `prompts.go` - Prompt template loading and building
 
-## Key Types
+## Subdirectories
 
-- `DocumentationUpdater` - Interface for synchronous and background doc updates
-- `Updater` - Concrete implementation using filesystem, commander, and environment services
-- `UpdaterConfig` - Configuration for doc updates (paths, model, start line)
-- `TranscriptEntry` - Parsed JSONL entry (assistant messages and agent results)
+- `rangeupdater/` - Range-based documentation updates using Git commit ranges
 
-## Usage
+## Tests
 
-The updater parses transcript JSONL files incrementally, formats relevant entries (assistant messages and completed agent results) into markdown, and invokes Claude CLI with a prompt template to update documentation. It uses a recursion guard (`CLAUDE_HOOK_INTERNAL=1`) to prevent infinite loops when Claude invokes hooks.
-
-See [../services/hooks/](../services/hooks/) for integration with session hooks.
+- `transcript_test.go` - Tests for transcript parsing
+- `prompts_test.go` - Tests for prompt template handling
+- `updater_test.go` - Tests for the documentation updater
+ng
+- `updater_test.go` - Tests for the documentation updater

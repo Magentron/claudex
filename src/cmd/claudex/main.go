@@ -20,6 +20,7 @@ func (s *stringSlice) Set(v string) error { *s = append(*s, v); return nil }
 
 var noOverwrite = flag.Bool("no-overwrite", false, "skip overwriting existing .claude files")
 var showVersion = flag.Bool("version", false, "print version and exit")
+var updateDocs = flag.Bool("update-docs", false, "update index.md files based on git changes")
 var docPaths stringSlice
 
 func init() {
@@ -27,7 +28,7 @@ func init() {
 }
 
 func main() {
-	application := app.New(Version, showVersion, noOverwrite, docPaths)
+	application := app.New(Version, showVersion, noOverwrite, updateDocs, docPaths)
 
 	if err := application.Init(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
