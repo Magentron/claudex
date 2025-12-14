@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./hooks/session-end.sh"
+            "command": ".claude/hooks/session-end.sh"
           }
         ]
       }

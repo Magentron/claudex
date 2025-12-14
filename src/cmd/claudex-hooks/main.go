@@ -158,12 +158,7 @@ func handleSessionEnd(fs afero.Fs, cmdr commander.Commander, environ env.Environ
 	updater := doc.NewUpdater(fs, cmdr, environ)
 
 	handler := sessionend.NewHandler(fs, environ, updater, logger)
-	output, err := handler.Handle(input)
-	if err != nil {
-		return err
-	}
-
-	return builder.BuildCustom(*output)
+	return handler.Handle(input)
 }
 
 // handleSubagentStop processes subagent-stop hook events

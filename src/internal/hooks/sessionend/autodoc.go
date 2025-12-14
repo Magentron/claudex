@@ -29,8 +29,9 @@ func NewHandler(fs afero.Fs, env env.Environment, updater doc.DocumentationUpdat
 	}
 }
 
-// Handle triggers final documentation update when session ends
-func (h *Handler) Handle(input *shared.SessionEndInput) (*shared.HookOutput, error) {
+// Handle triggers final documentation update when session ends.
+// Returns nil on success (no JSON output is needed for SessionEnd hooks).
+func (h *Handler) Handle(input *shared.SessionEndInput) error {
 	_ = h.logger.LogInfo(fmt.Sprintf("Session ending: %s", input.Reason))
 
 	// Find session folder
@@ -38,7 +39,7 @@ func (h *Handler) Handle(input *shared.SessionEndInput) (*shared.HookOutput, err
 	if err != nil {
 		// Log error but allow execution to continue
 		_ = h.logger.LogError(fmt.Errorf("failed to find session folder: %w", err))
-		return h.allowOutput(), nil
+		return nil
 	}
 
 	_ = h.logger.LogInfo("Triggering final documentation update")
@@ -66,15 +67,5 @@ func (h *Handler) Handle(input *shared.SessionEndInput) (*shared.HookOutput, err
 		// Don't fail - log and continue
 	}
 
-	return h.allowOutput(), nil
-}
-
-// allowOutput creates a standard "allow" response for SessionEnd events
-func (h *Handler) allowOutput() *shared.HookOutput {
-	return &shared.HookOutput{
-		HookSpecificOutput: shared.HookSpecificOutput{
-			HookEventName:      "SessionEnd",
-			PermissionDecision: "allow",
-		},
-	}
+	return nil
 }
