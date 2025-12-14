@@ -240,9 +240,7 @@ func (a *App) Run() error {
 				fmt.Println("You can install manually with: npm install -g @anthropic-ai/claude-code")
 				return fmt.Errorf("failed to install claude CLI")
 			}
-			fmt.Println("\n✓ Claude Code CLI installed successfully!")
-			fmt.Println("Please run 'claudex' again to continue.")
-			return nil
+			fmt.Println("\n✓ Claude Code CLI installed successfully!\n")
 		default:
 			fmt.Println("\nYou can install manually with: npm install -g @anthropic-ai/claude-code")
 			fmt.Println("More info: https://docs.anthropic.com/en/docs/claude-code")
