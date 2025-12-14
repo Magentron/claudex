@@ -2,6 +2,10 @@
 
 The Claude Experience you wish you had.
 
+> **Important: Claude Pro/Max/Team subscription required**
+>
+> Claudex requires [Claude Code](https://docs.anthropic.com/claude-code), which is only available with a Claude Pro ($20/mo), Max ($100/mo), or Team subscription. The free Claude tier does not include Claude Code access.
+
 ## Features
 
 ### 🗂️ Persistent Sessions
@@ -114,8 +118,9 @@ Work gets broken into independent tracks. Multiple engineers execute simultaneou
 
 ## Prerequisites
 
-- [Go 1.21+](https://go.dev/dl/)
-- [Claude CLI](https://docs.anthropic.com/claude-code)
+- **Claude Pro, Max, or Team subscription** — Required for Claude Code access
+- [Claude Code CLI](https://docs.anthropic.com/claude-code) — Install via `npm install -g @anthropic-ai/claude-code`
+- [Go 1.21+](https://go.dev/dl/) — For building claudex
 
 ### Recommended MCPs
 
