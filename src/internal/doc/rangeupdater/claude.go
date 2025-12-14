@@ -55,5 +55,5 @@ MODIFIED FILES:
 FILES IN DIRECTORY:
 %s
 
-This is a lightweight documentation pointer that helps developers understand the codebase. Read the existing content and explore the surrounding code to understand its purpose. Make thoughtful updates that keep it relevant and useful.`, indexPath, modifiedFiles, listing)
+This is a lightweight documentation pointer that helps developers understand the codebase. Other index.md files may exist in parent or child directories - explore them to understand the documentation structure and determine the appropriate scope for this file. Make thoughtful updates that keep it relevant and useful.`, indexPath, modifiedFiles, listing)
 }
