@@ -44,8 +44,8 @@ func New(fs afero.Fs, cmd commander.Commander, env env.Environment) *UpdateDocsU
 //
 // Returns an error if the update fails.
 func (uc *UpdateDocsUseCase) Execute(projectDir string) error {
-	// Use project directory as session path for tracking
-	sessionPath := projectDir
+	// Use sessions directory for tracking state
+	sessionPath := filepath.Join(projectDir, "sessions")
 
 	// Create services
 	gitSvc := git.New(uc.cmd)
