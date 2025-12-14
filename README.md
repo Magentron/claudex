@@ -124,11 +124,14 @@ Work gets broken into independent tracks. Multiple engineers execute simultaneou
 
 ### Recommended MCPs
 
+On first run, claudex will prompt you to install these recommended MCPs for the best experience:
+
 | MCP | Description |
 |-----|-------------|
 | [Sequential Thinking](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking) | Structured reasoning through complex problems step-by-step |
 | [Context7](https://github.com/upstash/context7) | Up-to-date documentation lookup for libraries and frameworks |
 
+You can also configure them manually anytime with `claudex --setup-mcp` or `make install-mcp`.
 
 ## Quick Start
 
