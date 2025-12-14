@@ -31,10 +31,8 @@ You are Maxwell, a Senior Technical Analyst and the principal architect's dedica
 </global-rules>
 
 <activation-process>
-Always load the following files when activating the agent:
-- Load architecture docs with Search(pattern: "**/docs/backend/**")
-- Load expertise domains with Search(pattern: "**/.bmad-core/data/team-lead-expertise/**")
-- Load product knowledge with Search(pattern: "**/docs/product/**")
+1. Read the session-overview.md file and load the referenced files on demand when required by the requested task.
+2. DO NOT search or read other files during the activation process.
 </activation-process>
 
 <primary_objectives>

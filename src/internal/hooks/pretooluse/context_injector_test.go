@@ -274,7 +274,7 @@ func TestHandler_WithDocPaths(t *testing.T) {
 	require.NotNil(t, output.HookSpecificOutput.UpdatedInput)
 
 	modifiedPrompt := output.HookSpecificOutput.UpdatedInput["prompt"].(string)
-	assert.Contains(t, modifiedPrompt, "### Recommended File Names:")
+	assert.Contains(t, modifiedPrompt, "**Root Documentation Entry Points:**")
 	assert.Contains(t, modifiedPrompt, "- research-{topic}.md")
 	assert.Contains(t, modifiedPrompt, "- execution-plan-{feature}.md")
 	assert.Contains(t, modifiedPrompt, "- analysis-{component}.md")
@@ -451,7 +451,7 @@ func TestBuildSessionContext(t *testing.T) {
 	assert.True(t, bananaIdx < zebraIdx)
 
 	// Verify doc paths
-	assert.Contains(t, context, "### Recommended File Names:")
+	assert.Contains(t, context, "**Root Documentation Entry Points:**")
 	assert.Contains(t, context, "- research-{topic}.md")
 	assert.Contains(t, context, "- execution-plan-{feature}.md")
 }
@@ -583,9 +583,10 @@ func TestBuildSessionContext_WithIndexMdHint(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	assert.Contains(t, context, "### Codebase Navigation:")
-	assert.Contains(t, context, "This project contains index.md files")
-	assert.Contains(t, context, "Use them for quick codebase understanding instead of extensive Glob/Grep searches")
+	assert.Contains(t, context, "### ACTIVATION PROCEDURE (Execute on Session Start)")
+	assert.Contains(t, context, "**STEP 1: Load Session Context**")
+	assert.Contains(t, context, "**STEP 2: Load Root Index Files**")
+	assert.Contains(t, context, "**STEP 3: Recursive Index Traversal (Task-Driven)**")
 }
 
 func TestBuildSessionContext_NoIndexMdHint(t *testing.T) {

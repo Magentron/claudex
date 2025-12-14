@@ -175,20 +175,30 @@ func (h *Handler) buildSessionContext(sessionPath string, docPaths []string, pro
 		}
 	}
 
-	// Add index.md hint if project contains index.md files
-	if h.hasIndexMdFiles(projectRoot) {
-		sb.WriteString("\n### Codebase Navigation:\n")
-		sb.WriteString("This project contains index.md files. Use them for quick codebase understanding instead of extensive Glob/Grep searches.\n")
-	}
+	// Add activation procedure for documentation loading
+	sb.WriteString("\n### ACTIVATION PROCEDURE (Execute on Session Start)\n\n")
+	sb.WriteString("Before beginning any task work, execute this mandatory 3-step loading sequence:\n\n")
 
-	// Add doc paths if present
+	sb.WriteString("**STEP 1: Load Session Context**\n")
+	sb.WriteString(fmt.Sprintf("- Read `%s/session-overview.md` using the Read tool\n", sessionPath))
+
+	sb.WriteString("**STEP 2: Load Root Doc Files**\n")
+	sb.WriteString("- Read ALL files listed under \"Root Documentation Entry Points\" below\n")
+	sb.WriteString("- Use Read tool for each file (do NOT use Glob/Grep for discovery)\n")
+
+	sb.WriteString("**STEP 3: Recursive Index Traversal (Task-Driven)**\n")
+	sb.WriteString("- Each doc file contains links to other doc files in subdirectories\n")
+	sb.WriteString("- CRITICAL: Load only the files that are directly related and relevant to the task at hand\n")
+
+	// Add doc paths as root entry points
 	if len(docPaths) > 0 {
-		sb.WriteString("\n### Recommended File Names:\n")
+		sb.WriteString("**Root Documentation Entry Points:**\n")
 		for _, docPath := range docPaths {
 			if docPath != "" {
 				sb.WriteString(fmt.Sprintf("- %s\n", docPath))
 			}
 		}
+		sb.WriteString("\n")
 	}
 
 	return sb.String(), nil

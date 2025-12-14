@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"claudex/internal/services/config"
@@ -89,10 +88,14 @@ func (a *App) launchNew(si SessionInfo) error {
 	time.Sleep(300 * time.Millisecond)
 
 	// Construct relative session path for activation command
-	relativeSessionPath := filepath.Join("sessions", filepath.Base(si.Path))
+	relativeSessionPath := filepath.Join(".claudex", "sessions", filepath.Base(si.Path))
 	activationPrompt := fmt.Sprintf("/agents:team-lead activate in session %s", relativeSessionPath)
 	if len(a.docPaths) > 0 {
-		activationPrompt += fmt.Sprintf(" with documentation %s", strings.Join(a.docPaths, ", "))
+		activationPrompt += "\n\nIMPORTANT - Required Documentation:\nBefore proceeding, you MUST read these documentation files:"
+		for _, docPath := range a.docPaths {
+			absPath, _ := filepath.Abs(docPath)
+			activationPrompt += fmt.Sprintf("\n- %s", absPath)
+		}
 	}
 
 	// Launch the Claude session with activation command
@@ -122,10 +125,14 @@ func (a *App) launchFork(si SessionInfo) error {
 	time.Sleep(300 * time.Millisecond)
 
 	// For fork, start a new session with activation command
-	relativeSessionPath := filepath.Join("sessions", filepath.Base(si.Path))
+	relativeSessionPath := filepath.Join(".claudex", "sessions", filepath.Base(si.Path))
 	activationPrompt := fmt.Sprintf("/agents:team-lead activate in session %s", relativeSessionPath)
 	if len(a.docPaths) > 0 {
-		activationPrompt += fmt.Sprintf(" with documentation %s", strings.Join(a.docPaths, ", "))
+		activationPrompt += "\n\nIMPORTANT - Required Documentation:\nBefore proceeding, you MUST read these documentation files:"
+		for _, docPath := range a.docPaths {
+			absPath, _ := filepath.Abs(docPath)
+			activationPrompt += fmt.Sprintf("\n- %s", absPath)
+		}
 	}
 
 	return launchClaude(a.deps, si.ClaudeID, activationPrompt)
@@ -141,10 +148,14 @@ func (a *App) launchFresh(si SessionInfo) error {
 	time.Sleep(300 * time.Millisecond)
 
 	// For fresh, start a new session with activation command
-	relativeSessionPath := filepath.Join("sessions", filepath.Base(si.Path))
+	relativeSessionPath := filepath.Join(".claudex", "sessions", filepath.Base(si.Path))
 	activationPrompt := fmt.Sprintf("/agents:team-lead activate in session %s", relativeSessionPath)
 	if len(a.docPaths) > 0 {
-		activationPrompt += fmt.Sprintf(" with documentation %s", strings.Join(a.docPaths, ", "))
+		activationPrompt += "\n\nIMPORTANT - Required Documentation:\nBefore proceeding, you MUST read these documentation files:"
+		for _, docPath := range a.docPaths {
+			absPath, _ := filepath.Abs(docPath)
+			activationPrompt += fmt.Sprintf("\n- %s", absPath)
+		}
 	}
 
 	return launchClaude(a.deps, si.ClaudeID, activationPrompt)
