@@ -410,6 +410,7 @@ func TestInit_CreatesClaudexDirectory(t *testing.T) {
 	noOverwrite := false
 	updateDocs := false
 	setupMCP := false
+	createIndex := ""
 	docPaths := []string{}
 
 	app := &App{
@@ -419,6 +420,7 @@ func TestInit_CreatesClaudexDirectory(t *testing.T) {
 		noOverwriteFlag: &noOverwrite,
 		updateDocsFlag:  &updateDocs,
 		setupMCPFlag:    &setupMCP,
+		createIndexFlag: &createIndex,
 		docPathsFlag:    docPaths,
 	}
 
@@ -481,6 +483,7 @@ func TestInit_MigratesLegacySessions(t *testing.T) {
 	noOverwrite := false
 	updateDocs := false
 	setupMCP := false
+	createIndex := ""
 	docPaths := []string{}
 
 	app := &App{
@@ -490,6 +493,7 @@ func TestInit_MigratesLegacySessions(t *testing.T) {
 		noOverwriteFlag: &noOverwrite,
 		updateDocsFlag:  &updateDocs,
 		setupMCPFlag:    &setupMCP,
+		createIndexFlag: &createIndex,
 		docPathsFlag:    docPaths,
 	}
 
@@ -543,6 +547,7 @@ doc = ["/custom/path"]`
 	noOverwrite := false
 	updateDocs := false
 	setupMCP := false
+	createIndex := ""
 	docPaths := []string{}
 
 	app := &App{
@@ -552,6 +557,7 @@ doc = ["/custom/path"]`
 		noOverwriteFlag: &noOverwrite,
 		updateDocsFlag:  &updateDocs,
 		setupMCPFlag:    &setupMCP,
+		createIndexFlag: &createIndex,
 		docPathsFlag:    docPaths,
 	}
 
@@ -606,6 +612,7 @@ autodoc_frequency = 20`
 	noOverwrite := false
 	updateDocs := false
 	setupMCP := false
+	createIndex := ""
 	docPaths := []string{}
 
 	app := &App{
@@ -615,6 +622,7 @@ autodoc_frequency = 20`
 		noOverwriteFlag: &noOverwrite,
 		updateDocsFlag:  &updateDocs,
 		setupMCPFlag:    &setupMCP,
+		createIndexFlag: &createIndex,
 		docPathsFlag:    docPaths,
 	}
 
@@ -652,6 +660,7 @@ func TestInit_MigrationIdempotent(t *testing.T) {
 	noOverwrite := false
 	updateDocs := false
 	setupMCP := false
+	createIndex := ""
 	docPaths := []string{}
 
 	app := &App{
@@ -661,6 +670,7 @@ func TestInit_MigrationIdempotent(t *testing.T) {
 		noOverwriteFlag: &noOverwrite,
 		updateDocsFlag:  &updateDocs,
 		setupMCPFlag:    &setupMCP,
+		createIndexFlag: &createIndex,
 		docPathsFlag:    docPaths,
 	}
 

@@ -2,6 +2,8 @@ package posttooluse
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"claudex/internal/doc"
 	"claudex/internal/hooks/shared"
@@ -70,12 +72,30 @@ func (h *AutoDocHandler) Handle(input *shared.PostToolUseInput) (*shared.HookOut
 		startLine = 0 // Start from beginning if we can't read the marker
 	}
 
+	// Find project root to build absolute template path
+	projectRoot, err := h.findProjectRoot(sessionPath)
+	if err != nil {
+		_ = h.logger.LogError(fmt.Errorf("failed to find project root: %w", err))
+		return h.allowOutput(), nil
+	}
+
+	// Build absolute path to template
+	templatePath := filepath.Join(projectRoot, ".claude", "hooks", "prompts", "session-overview-documenter.md")
+
+	// Read existing session context
+	sessionContext, err := h.readSessionContext(sessionPath)
+	if err != nil {
+		_ = h.logger.LogError(fmt.Errorf("failed to read session context: %w", err))
+		sessionContext = "" // Continue with empty context if reading fails
+	}
+
 	// Trigger documentation update (background, non-blocking)
 	config := doc.UpdaterConfig{
 		SessionPath:    sessionPath,
 		TranscriptPath: input.TranscriptPath,
 		OutputFile:     "session-overview.md",
-		PromptTemplate: "session-overview-documenter.md",
+		PromptTemplate: templatePath,
+		SessionContext: sessionContext,
 		Model:          "haiku",
 		StartLine:      startLine + 1, // Start from next line (1-indexed)
 	}
@@ -96,4 +116,50 @@ func (h *AutoDocHandler) allowOutput() *shared.HookOutput {
 			PermissionDecision: "allow",
 		},
 	}
+}
+
+// findProjectRoot walks up from sessionPath to find the project root (where .claude directory exists)
+func (h *AutoDocHandler) findProjectRoot(sessionPath string) (string, error) {
+	current := sessionPath
+	for {
+		claudeDir := filepath.Join(current, ".claude")
+		exists, err := afero.DirExists(h.fs, claudeDir)
+		if err == nil && exists {
+			return current, nil
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			// Reached filesystem root
+			return "", fmt.Errorf("could not find .claude directory in any parent of %s", sessionPath)
+		}
+		current = parent
+	}
+}
+
+// readSessionContext reads existing markdown files from session folder and builds context string
+func (h *AutoDocHandler) readSessionContext(sessionPath string) (string, error) {
+	files, err := afero.ReadDir(h.fs, sessionPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read session directory: %w", err)
+	}
+
+	var mdFiles []string
+	for _, file := range files {
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".md") {
+			mdFiles = append(mdFiles, file.Name())
+		}
+	}
+
+	if len(mdFiles) == 0 {
+		return "", nil
+	}
+
+	var context strings.Builder
+	context.WriteString("Existing documentation files in session:\n")
+	for _, filename := range mdFiles {
+		context.WriteString(fmt.Sprintf("- %s\n", filename))
+	}
+
+	return context.String(), nil
 }

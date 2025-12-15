@@ -26,12 +26,14 @@ func LoadPromptTemplate(fs afero.Fs, templatePath string) (string, error) {
 // The template can contain placeholders that will be replaced with actual values:
 // - $RELEVANT_CONTENT: The formatted transcript content
 // - $DOC_CONTEXT: Session context and existing documentation
-func BuildDocumentationPrompt(template string, transcriptContent string, sessionContext string) string {
+// - $SESSION_FOLDER: Absolute path to the session folder
+func BuildDocumentationPrompt(template string, transcriptContent string, sessionContext string, sessionFolder string) string {
 	prompt := template
 
 	// Replace placeholders with actual content
 	prompt = strings.ReplaceAll(prompt, "$RELEVANT_CONTENT", transcriptContent)
 	prompt = strings.ReplaceAll(prompt, "$DOC_CONTEXT", sessionContext)
+	prompt = strings.ReplaceAll(prompt, "$SESSION_FOLDER", sessionFolder)
 
 	return prompt
 }

@@ -585,7 +585,7 @@ func TestBuildSessionContext_WithIndexMdHint(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, context, "### ACTIVATION PROCEDURE (Execute on Session Start)")
 	assert.Contains(t, context, "**STEP 1: Load Session Context**")
-	assert.Contains(t, context, "**STEP 2: Load Root Index Files**")
+	assert.Contains(t, context, "**STEP 2: Load Root Doc Files**")
 	assert.Contains(t, context, "**STEP 3: Recursive Index Traversal (Task-Driven)**")
 }
 

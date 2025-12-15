@@ -25,7 +25,7 @@ type PostToolUseInput struct {
 	HookInput
 	ToolName     string                 `json:"tool_name"`
 	ToolInput    map[string]interface{} `json:"tool_input"`
-	ToolResponse map[string]interface{} `json:"tool_response"`
+	ToolResponse interface{} `json:"tool_response"`
 	ToolUseID    string                 `json:"tool_use_id"`
 	Status       string                 `json:"status"`
 	AgentID      string                 `json:"agent_id,omitempty"`

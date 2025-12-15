@@ -85,7 +85,7 @@ func (u *Updater) Run(config UpdaterConfig) error {
 	}
 
 	// Build final prompt
-	prompt := BuildDocumentationPrompt(template, transcriptContent, config.SessionContext)
+	prompt := BuildDocumentationPrompt(template, transcriptContent, config.SessionContext, config.SessionPath)
 
 	// Invoke Claude with recursion guard
 	if err := u.invokeClaude(prompt, config.Model); err != nil {
