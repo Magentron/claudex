@@ -14,14 +14,20 @@ Context injection hook that modifies Task tool prompts with session folder infor
 ## Behavior
 
 1. Only modifies `Task` tool invocations (all other tools pass through unchanged)
-2. Finds session folder using `session.FindSessionFolder()`
-3. Builds markdown context block with session path and mandatory rules
-4. Uses pointer-based approach: references `session-overview.md` if available; falls back to file enumeration
-5. Detects index.md files in project and adds navigation hint if found
+2. Detects Explore agents and provides specialized context:
+   - **Explore agents** (subagent_type="Explore", case-insensitive): Receive LSP/MCP tool instructions
+   - **Other agents**: Receive session context with documentation loading procedures
+3. Finds session folder using `session.FindSessionFolder()`
+4. Builds appropriate markdown context block:
+   - For Explore agents: LSP (code navigation), Context7 (library docs), Sequential Thinking instructions
+   - For other agents: Session path, mandatory rules, activation procedure (3-step doc loading)
+5. Uses pointer-based approach: references `session-overview.md` if available; falls back to file enumeration
 6. Injects context before original prompt using `UpdatedInput` field
 7. Returns "allow" with modified prompt for Task tools
 
-## Context Injection Format
+## Context Injection Formats
+
+### For Standard Agents (Session Context)
 
 ```markdown
 ## SESSION CONTEXT (CRITICAL)
@@ -46,12 +52,61 @@ OR (File enumeration fallback):
 - file1.md
 - file2.md
 
-### Codebase Navigation:
-(Optional - included if index.md files exist in project)
-This project contains index.md files. Use them for quick codebase understanding instead of extensive Glob/Grep searches.
+### ACTIVATION PROCEDURE (Execute on Session Start)
+
+Before beginning any task work, execute this mandatory 3-step loading sequence:
+
+**STEP 1: Load Session Context**
+- Read `{sessionPath}/session-overview.md` using the Read tool
+
+**STEP 2: Load Root Doc Files**
+- Read ALL files listed under "Root Documentation Entry Points" below
+- Use Read tool for each file (do NOT use Glob/Grep for discovery)
+
+**STEP 3: Recursive Index Traversal (Task-Driven)**
+- Each doc file contains links to other doc files in subdirectories
+- CRITICAL: Load only the files that are directly related and relevant to the task at hand
 
 ### Recommended File Names:
 - {CLAUDEX_DOC_PATHS entries}
+
+---
+
+## ORIGINAL REQUEST
+
+{original prompt}
+```
+
+### For Explore Agents (MCP/LSP Instructions)
+
+```markdown
+## EXPLORE AGENT ENHANCEMENTS
+
+You have access to powerful tools for codebase exploration. Use them effectively.
+
+### LSP Tool (PREFERRED for code navigation)
+Use LSP instead of brute-force Glob/Grep when possible:
+- `goToDefinition`: Jump to where a symbol is defined
+- `findReferences`: Find all usages of a symbol
+- `hover`: Get documentation and type info for a symbol
+- `documentSymbol`: List all symbols in a file
+- `workspaceSymbol`: Search symbols across the codebase
+- `incomingCalls`/`outgoingCalls`: Trace call hierarchy
+
+### Context7 MCP (for library documentation)
+Before making assumptions about libraries/frameworks, query current docs:
+1. `mcp__context7__resolve-library-id`: Get library ID
+2. `mcp__context7__query-docs`: Query specific documentation
+
+### Sequential Thinking MCP (for complex analysis)
+Use `mcp__sequential-thinking__sequentialthinking` for multi-step problem solving and trade-off analysis.
+
+### Exploration Best Practices
+1. Start with LSP `workspaceSymbol` to find entry points
+2. Use `goToDefinition` to trace implementations
+3. Use `findReferences` to understand usage patterns
+4. Fall back to Glob/Grep only for pattern-based searches
+5. Cite findings with file:line format
 
 ---
 
