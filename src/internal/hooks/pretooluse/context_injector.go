@@ -85,6 +85,31 @@ func (h *Handler) Handle(input *shared.PreToolUseInput) (*shared.HookOutput, err
 		}, nil
 	}
 
+	// Check if this is an Explore agent - they get specialized context
+	subagentType, _ := input.ToolInput["subagent_type"].(string)
+	if strings.EqualFold(subagentType, "Explore") {
+		if h.logger != nil {
+			_ = h.logger.Logf("Explore agent detected, injecting MCP/LSP instructions")
+		}
+
+		exploreContext := h.buildExploreContext()
+		modifiedPrompt := fmt.Sprintf("%s\n\n---\n\n## ORIGINAL REQUEST\n\n%s", exploreContext, originalPrompt)
+
+		updatedInput := make(map[string]interface{})
+		for k, v := range input.ToolInput {
+			updatedInput[k] = v
+		}
+		updatedInput["prompt"] = modifiedPrompt
+
+		return &shared.HookOutput{
+			HookSpecificOutput: shared.HookSpecificOutput{
+				HookEventName:      "PreToolUse",
+				PermissionDecision: "allow",
+				UpdatedInput:       updatedInput,
+			},
+		}, nil
+	}
+
 	// Get doc paths from environment
 	docPathsStr := h.env.Get("CLAUDEX_DOC_PATHS")
 	var docPaths []string
@@ -252,6 +277,49 @@ func (h *Handler) hasIndexMdFiles(projectRoot string) bool {
 	})
 
 	return found
+}
+
+// buildExploreContext creates the Explore-specific context with MCP/LSP instructions
+func (h *Handler) buildExploreContext() string {
+	var sb strings.Builder
+
+	sb.WriteString("## EXPLORE AGENT ENHANCEMENTS\n\n")
+	sb.WriteString("You have access to powerful tools for codebase exploration. Use them effectively.\n\n")
+
+	// LSP Instructions
+	sb.WriteString("### LSP Tool (PREFERRED for code navigation)\n")
+	sb.WriteString("Use LSP instead of brute-force Glob/Grep when possible:\n")
+	sb.WriteString("- `goToDefinition`: Jump to where a symbol is defined\n")
+	sb.WriteString("- `findReferences`: Find all usages of a symbol\n")
+	sb.WriteString("- `hover`: Get documentation and type info for a symbol\n")
+	sb.WriteString("- `documentSymbol`: List all symbols in a file\n")
+	sb.WriteString("- `workspaceSymbol`: Search symbols across the codebase\n")
+	sb.WriteString("- `incomingCalls`/`outgoingCalls`: Trace call hierarchy\n\n")
+	sb.WriteString("**Parameters**: `operation`, `filePath` (absolute), `line`, `character`\n\n")
+
+	// Context7 MCP Instructions
+	sb.WriteString("### Context7 MCP (for library documentation)\n")
+	sb.WriteString("Before making assumptions about libraries/frameworks, query current docs:\n")
+	sb.WriteString("1. `mcp__context7__resolve-library-id`: Get library ID (e.g., \"redis\" → \"/redis/redis\")\n")
+	sb.WriteString("2. `mcp__context7__query-docs`: Query specific documentation\n")
+	sb.WriteString("**Constraint**: Max 3 calls per question\n\n")
+
+	// Sequential Thinking MCP Instructions
+	sb.WriteString("### Sequential Thinking MCP (for complex analysis)\n")
+	sb.WriteString("Use `mcp__sequential-thinking__sequentialthinking` for:\n")
+	sb.WriteString("- Multi-step problem solving\n")
+	sb.WriteString("- Trade-off analysis\n")
+	sb.WriteString("- Complex architectural decisions\n\n")
+
+	// Best Practices
+	sb.WriteString("### Exploration Best Practices\n")
+	sb.WriteString("1. Start with LSP `workspaceSymbol` to find entry points\n")
+	sb.WriteString("2. Use `goToDefinition` to trace implementations\n")
+	sb.WriteString("3. Use `findReferences` to understand usage patterns\n")
+	sb.WriteString("4. Fall back to Glob/Grep only for pattern-based searches\n")
+	sb.WriteString("5. Cite findings with file:line format\n")
+
+	return sb.String()
 }
 
 // HandleFromBuilder is a convenience wrapper that returns the built output
