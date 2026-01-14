@@ -169,7 +169,7 @@ npm-clean:
 # Show help
 help:
 	@echo "Available targets:"
-	@echo "  make all             - Build the executable (default)"
+	@echo "  make all             - Show this help (default)"
 	@echo "  make build           - Build claudex"
 	@echo "  make build-hooks     - Build claudex-hooks binary"
 	@echo "  make deps            - Install/update dependencies"

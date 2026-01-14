@@ -51,7 +51,7 @@ func Test_Detect(t *testing.T) {
 		},
 		{
 			name:       "PHP via composer.json",
-			files:      map[string]string{"composer.json": `{"require": {"php": "^8.2"}`},
+			files:      map[string]string{"composer.json": `{"require": {"php": "^8.2"}}`},
 			wantStacks: []string{"php"},
 		},
 		{
