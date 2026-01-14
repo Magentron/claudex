@@ -60,6 +60,11 @@ func Test_Detect(t *testing.T) {
 			wantStacks: []string{"php"},
 		},
 		{
+			name:       "PHP via Laravel artisan",
+			files:      map[string]string{"artisan": "#!/usr/bin/env php"},
+			wantStacks: []string{"php"},
+		},
+		{
 			name: "Multiple stacks - TypeScript and Go",
 			files: map[string]string{
 				"package.json": `{"name": "test"}`,

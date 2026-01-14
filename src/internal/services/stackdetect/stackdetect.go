@@ -44,7 +44,8 @@ func Detect(fs afero.Fs, projectDir string) []string {
 
 	// PHP detection
 	if FindFile(fs, projectDir, "composer.json", 3) ||
-		FindFile(fs, projectDir, "index.php", 3) {
+		FindFile(fs, projectDir, "index.php", 3) ||
+		FindFile(fs, projectDir, "artisan", 3) {
 		stacks = append(stacks, "php")
 	}
 

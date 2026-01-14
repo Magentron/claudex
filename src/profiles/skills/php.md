@@ -124,6 +124,97 @@ You are an expert in Modern PHP (8.2+) with deep Laravel expertise, plus familia
 - Ignoring static analysis errors (`baseline.neon` is a temporary fix, not a solution)
 </best_practices>
 
+<php_patterns>
+## Modern PHP 8.2+ Patterns
+
+### Readonly DTO with Constructor Promotion
+```php
+declare(strict_types=1);
+
+readonly class CreateUserRequest
+{
+    public function __construct(
+        public string $email,
+        public string $name,
+        public ?string $phone = null,
+    ) {}
+}
+```
+
+### Backed Enum with Methods
+```php
+declare(strict_types=1);
+
+enum OrderStatus: string
+{
+    case Pending = 'pending';
+    case Processing = 'processing';
+    case Shipped = 'shipped';
+    case Delivered = 'delivered';
+    case Cancelled = 'cancelled';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending => 'Awaiting Payment',
+            self::Processing => 'Being Prepared',
+            self::Shipped => 'On the Way',
+            self::Delivered => 'Completed',
+            self::Cancelled => 'Cancelled',
+        };
+    }
+}
+```
+
+### Service with Dependency Injection
+```php
+declare(strict_types=1);
+
+final readonly class OrderService
+{
+    public function __construct(
+        private OrderRepository $orders,
+        private PaymentGateway $payments,
+        private EventDispatcher $events,
+    ) {}
+
+    public function place(CreateOrderRequest $request): Order
+    {
+        $order = Order::create($request);
+
+        $this->orders->save($order);
+        $this->payments->charge($order->total, $request->paymentMethod);
+        $this->events->dispatch(new OrderPlaced($order));
+
+        return $order;
+    }
+}
+```
+
+### Single Action Class
+```php
+declare(strict_types=1);
+
+final readonly class GenerateInvoicePdf
+{
+    public function __construct(
+        private InvoiceRepository $invoices,
+        private PdfRenderer $renderer,
+    ) {}
+
+    public function __invoke(int $invoiceId): string
+    {
+        $invoice = $this->invoices->findOrFail($invoiceId);
+
+        return $this->renderer->render('invoices.pdf', [
+            'invoice' => $invoice,
+            'company' => config('company'),
+        ]);
+    }
+}
+```
+</php_patterns>
+
 <utils>
 ## Generic PHP Commands
 ### Format code (PHP-CS-Fixer)
