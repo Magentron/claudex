@@ -7,23 +7,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// MockInputReader is a test implementation of InputReader.
+// MockInputReader is a test implementation of InputReader that returns preconfigured
+// values. It allows testing PromptDescriptionWithReader without requiring actual
+// terminal interaction.
 type MockInputReader struct {
+	// Input is the string returned by Readline.
 	Input string
-	Err   error
+	// Err is the error returned by Readline. If non-nil, Input is ignored.
+	Err error
 }
 
-// Readline returns the configured Input and Err.
+// Readline returns the preconfigured Input and Err values.
+// This allows tests to simulate various input scenarios including errors.
 func (m *MockInputReader) Readline() (string, error) {
 	return m.Input, m.Err
 }
 
-// Close is a no-op for the mock.
+// Close is a no-op for the mock reader. Always returns nil.
 func (m *MockInputReader) Close() error {
 	return nil
 }
 
-// TestPromptDescriptionWithReader tests the PromptDescriptionWithReader function with various inputs.
+// TestPromptDescriptionWithReader verifies PromptDescriptionWithReader behavior using table-driven tests.
 func TestPromptDescriptionWithReader(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -99,4 +104,14 @@ func TestPromptDescriptionWithReader(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestPromptDescriptionWithReader_NilReader verifies that passing a nil reader returns an error
+// instead of panicking.
+func TestPromptDescriptionWithReader_NilReader(t *testing.T) {
+	result, err := PromptDescriptionWithReader("Test", "", nil)
+
+	assert.Error(t, err)
+	assert.Equal(t, "reader cannot be nil", err.Error())
+	assert.Equal(t, "", result)
 }

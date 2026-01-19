@@ -17,18 +17,29 @@ import (
 	"github.com/chzyer/readline"
 )
 
-// InputReader abstracts input reading for testability.
+// InputReader defines the interface for reading user input from the terminal.
+// It abstracts the underlying readline implementation to enable testing with mock readers.
+// Implementations must support reading a single line of input and proper resource cleanup.
 type InputReader interface {
+	// Readline reads a single line of user input and returns it.
+	// Returns an error if reading fails or is interrupted (e.g., Ctrl+C).
 	Readline() (string, error)
+
+	// Close releases any resources held by the reader.
+	// Must be called when the reader is no longer needed.
 	Close() error
 }
 
-// ReadlineReader wraps readline.Instance to implement InputReader.
+// ReadlineReader provides readline-based input with support for cursor navigation,
+// line editing shortcuts (Ctrl+A/E, arrow keys), and other standard terminal features.
+// It wraps github.com/chzyer/readline to implement the InputReader interface.
 type ReadlineReader struct {
 	instance *readline.Instance
 }
 
-// NewReadlineReader creates a new readline-based input reader with the given prompt.
+// NewReadlineReader creates a new ReadlineReader configured with the given prompt string.
+// The reader supports cursor navigation, line editing, and standard readline shortcuts.
+// Returns an error if the readline instance cannot be initialized (e.g., terminal issues).
 func NewReadlineReader(prompt string) (InputReader, error) {
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:            prompt,
@@ -42,7 +53,9 @@ func NewReadlineReader(prompt string) (InputReader, error) {
 	return &ReadlineReader{instance: rl}, nil
 }
 
-// Readline reads a line of input and returns it trimmed.
+// Readline reads a single line of user input with full readline support.
+// The input is trimmed of leading and trailing whitespace before returning.
+// Returns io.EOF if the user presses Ctrl+D, or readline.ErrInterrupt on Ctrl+C.
 func (r *ReadlineReader) Readline() (string, error) {
 	line, err := r.instance.Readline()
 	if err != nil {
@@ -51,7 +64,8 @@ func (r *ReadlineReader) Readline() (string, error) {
 	return strings.TrimSpace(line), nil
 }
 
-// Close closes the readline instance.
+// Close releases resources held by the underlying readline instance.
+// This includes restoring terminal state. Always call Close when done reading input.
 func (r *ReadlineReader) Close() error {
 	return r.instance.Close()
 }
@@ -269,10 +283,22 @@ func TitleStyle() lipgloss.Style {
 // UI Functions for Session Flow
 // These functions handle pure UI concerns - rendering prompts, collecting input, displaying results
 
-// PromptDescriptionWithReader shows a prompt screen and collects user input using the provided reader.
-// Parameters: title (e.g., "Create New Session" or "Fork Session"), originalSession (optional, for fork context), reader (InputReader interface)
-// Returns: description string, error
+// PromptDescriptionWithReader displays a session description prompt and collects user input.
+// It clears the screen, shows the title and optional original session context, then reads
+// input using the provided InputReader. This function is designed for testability by
+// accepting an InputReader interface rather than reading directly from stdin.
+//
+// Parameters:
+//   - title: The prompt title displayed to the user (e.g., "Create New Session", "Fork Session")
+//   - originalSession: Optional name of the session being forked; empty string for new sessions
+//   - reader: An InputReader implementation for collecting user input
+//
+// Returns the trimmed description string, or an error if input fails or is empty.
+// The reader is automatically closed via defer when the function returns.
 func PromptDescriptionWithReader(title string, originalSession string, reader InputReader) (string, error) {
+	if reader == nil {
+		return "", fmt.Errorf("reader cannot be nil")
+	}
 	defer reader.Close()
 
 	fmt.Print("\033[H\033[2J") // Clear screen
@@ -296,9 +322,17 @@ func PromptDescriptionWithReader(title string, originalSession string, reader In
 	return description, nil
 }
 
-// PromptDescription shows a prompt screen and collects user input.
-// Parameters: title (e.g., "Create New Session" or "Fork Session"), originalSession (optional, for fork context)
-// Returns: description string, error
+// PromptDescription displays a session description prompt with readline support and collects user input.
+// This is the main entry point for collecting session descriptions from users. It provides full
+// readline functionality including cursor navigation (arrow keys), line editing (Ctrl+A/E), and
+// other standard terminal shortcuts.
+//
+// Parameters:
+//   - title: The prompt title displayed to the user (e.g., "Create New Session", "Fork Session")
+//   - originalSession: Optional name of the session being forked; empty string for new sessions
+//
+// Returns the trimmed description string, or an error if input fails, is empty, or readline
+// initialization fails.
 func PromptDescription(title string, originalSession string) (string, error) {
 	promptText := "  Description: "
 	if originalSession != "" {
