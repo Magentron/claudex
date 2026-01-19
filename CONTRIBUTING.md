@@ -83,7 +83,7 @@ make check   # Run fmt, vet, and test (recommended before PRs)
 
 If you encounter an error like:
 
-```
+```text
 go: go.mod requires go >= 1.24.0 (running go 1.23.9; GOTOOLCHAIN=local)
 ```
 
