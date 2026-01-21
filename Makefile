@@ -21,11 +21,19 @@ build-hooks:
 	@cd $(SRC_DIR) && go build -o ../bin/claudex-hooks ./cmd/claudex-hooks
 	@echo "✓ Built: bin/claudex-hooks"
 
+# Build binaries using temporary go paths
+build-temp:
+	GOTOOLCHAIN=auto GOPATH=/tmp/gopath GOMODCACHE=/tmp/gopath/pkg/mod make build build-hooks
+
 # Install dependencies
 deps:
 	@echo "Installing dependencies..."
 	@cd $(SRC_DIR) && go mod tidy
 	@echo "✓ Dependencies installed"
+
+# Install dependencies using temporary go paths
+deps-temp:
+	GOTOOLCHAIN=auto GOPATH=/tmp/gopath GOMODCACHE=/tmp/gopath/pkg/mod make deps
 
 # Run tests
 test:
@@ -33,11 +41,19 @@ test:
 	@cd $(SRC_DIR) && go test -v ./...
 	@echo "✓ Tests complete"
 
+# Run tests using temporary go paths
+test-temp:
+	GOTOOLCHAIN=auto GOPATH=/tmp/gopath GOMODCACHE=/tmp/gopath/pkg/mod make test
+
 # Format code
 fmt:
 	@echo "Formatting code..."
 	@cd $(SRC_DIR) && go fmt ./...
 	@echo "✓ Formatting complete"
+
+# Format code using temporary go paths
+fmt-temp:
+	GOTOOLCHAIN=auto GOPATH=/tmp/gopath GOMODCACHE=/tmp/gopath/pkg/mod make fmt
 
 # Vet code
 vet:
@@ -45,9 +61,17 @@ vet:
 	@cd $(SRC_DIR) && go vet ./...
 	@echo "✓ Vet complete"
 
+# Vet code using temporary go paths
+vet-temp:
+	GOTOOLCHAIN=auto GOPATH=/tmp/gopath GOMODCACHE=/tmp/gopath/pkg/mod make vet
+
 # Run all checks (fmt, vet, test) - use before submitting PRs
 check: fmt vet test
 	@echo "✓ All checks passed"
+
+# Run all checks (fmt, vet, test) using temporary go paths
+check-temp:
+	GOTOOLCHAIN=auto GOPATH=/tmp/gopath GOMODCACHE=/tmp/gopath/pkg/mod make check
 
 # Install hooks (binary + proxies)
 install-hooks: build-hooks
@@ -172,6 +196,7 @@ help:
 	@echo "  make all             - Show this help (default)"
 	@echo "  make build           - Build claudex"
 	@echo "  make build-hooks     - Build claudex-hooks binary"
+	@echo "  make build-temp      - Build binaries using temporary go paths"
 	@echo "  make deps            - Install/update dependencies"
 	@echo "  make test            - Run tests"
 	@echo "  make fmt             - Format code with go fmt"

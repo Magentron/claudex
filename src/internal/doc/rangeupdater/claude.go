@@ -7,6 +7,7 @@ import (
 
 	"claudex/internal/services/commander"
 	"claudex/internal/services/env"
+	"claudex/internal/services/processregistry"
 )
 
 // InvokeClaudeForIndex invokes Claude to regenerate an index.md file.
@@ -35,13 +36,29 @@ claude -p %q --model haiku 2>/dev/null
 
 	cmd := exec.Command("bash", "-c", bashScript)
 
-	// Detach the process so it survives after we exit
+	// Start the background process
 	if err := cmd.Start(); err != nil {
 		log.Printf("Failed to start background Claude process for %s: %v", indexPath, err)
 		return fmt.Errorf("failed to start background Claude process: %w", err)
 	}
 
-	log.Printf("Background process started (PID: %d) for %s", cmd.Process.Pid, indexPath)
+	pid := cmd.Process.Pid
+	log.Printf("Background process started (PID: %d) for %s", pid, indexPath)
+
+	// Register PID for runaway process protection tracking
+	processregistry.DefaultRegistry.Register(pid)
+
+	// Launch goroutine to wait for process completion and clean up
+	go func() {
+		if err := cmd.Wait(); err != nil {
+			log.Printf("Background Claude process (PID: %d) exited with error: %v", pid, err)
+		} else {
+			log.Printf("Background Claude process (PID: %d) completed successfully", pid)
+		}
+		// Unregister PID when process exits
+		processregistry.DefaultRegistry.Unregister(pid)
+	}()
+
 	return nil
 }
 

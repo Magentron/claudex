@@ -226,9 +226,72 @@ autodoc_session_end = true
 
 # Tool executions between doc updates (default: 5)
 autodoc_frequency = 5
+
+[features.process_protection]
+# Application-level process limit (default: 50, 0 = disabled)
+max_processes = 50
+
+# Max spawn frequency per second (default: 5)
+rate_limit_per_second = 5
+
+# Kernel-level hard limit - Linux only (default: 100, 0 = disabled)
+rlimit_nproc = 100
+
+# Per-process timeout in seconds (default: 300, 0 = no timeout)
+timeout_seconds = 300
 ```
 
 Environment variables override config values: `CLAUDEX_AUTODOC_SESSION_PROGRESS`, `CLAUDEX_AUTODOC_SESSION_END`, `CLAUDEX_AUTODOC_FREQUENCY`.
+
+### Runaway Process Protection
+
+Claudex includes multi-layered protection against runaway process spawning:
+
+**Protection Layers:**
+
+1. **Application-level tracking** - Monitors all spawned child processes and their descendants, blocking execution when the configured limit is reached
+2. **Rate limiting** - Prevents rapid process spawning with exponential backoff
+3. **Kernel-level enforcement** - RLIMIT_NPROC (Linux only) provides a hard backstop at the OS level
+4. **Process groups** - Isolates child processes for clean signal handling and termination
+
+**Quick Start:**
+
+Default settings protect against runaway processes out of the box. To customize, add to `.claudex/config.toml`:
+
+```toml
+[features.process_protection]
+max_processes = 50          # Application-level limit
+rate_limit_per_second = 5   # Max spawn frequency
+rlimit_nproc = 100          # Kernel-level hard limit (Linux)
+timeout_seconds = 300       # Per-process timeout (0 = no timeout)
+```
+
+**Environment Variable Overrides:**
+
+```bash
+# Disable protection for high-volume workloads
+CLAUDEX_MAX_PROCESSES=0 claudex
+
+# Increase limits for legitimate parallel processing
+CLAUDEX_MAX_PROCESSES=200 CLAUDEX_RLIMIT_NPROC=250 claudex
+
+# Set aggressive rate limiting
+CLAUDEX_RATE_LIMIT=2 claudex
+
+# Set per-process timeout (5 minutes)
+CLAUDEX_TIMEOUT=300 claudex
+```
+
+**Troubleshooting:**
+
+| Issue | Solution |
+|-------|----------|
+| "Process limit reached" error | Increase `max_processes` or set `CLAUDEX_MAX_PROCESSES=100` |
+| Legitimate workload blocked | Set `CLAUDEX_MAX_PROCESSES=0` to disable |
+| Rate limiting too aggressive | Increase `rate_limit_per_second` or set `CLAUDEX_RATE_LIMIT=10` |
+| Processes timing out | Increase `timeout_seconds` or set `CLAUDEX_TIMEOUT=600` |
+
+For more details, see the [Runaway Process Protection Guide](docs/runaway-process-protection.md).
 
 **Tip:** Keep `doc` files lightweight—they're passed to every agent. Use an index with brief descriptions and pointers:
 

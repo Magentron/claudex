@@ -1,8 +1,10 @@
 package notify
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"runtime"
 	"strings"
 	"testing"
@@ -34,6 +36,18 @@ func (m *MockCommander) Run(name string, args ...string) ([]byte, error) {
 		return m.RunFunc(name, args...)
 	}
 	return []byte{}, nil
+}
+
+func (m *MockCommander) Start(name string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
+	return nil
+}
+
+func (m *MockCommander) RunWithContext(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return m.Run(name, args...)
+}
+
+func (m *MockCommander) StartWithContext(ctx context.Context, name string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
+	return nil
 }
 
 func (m *MockCommander) GetCalls() []CommandCall {

@@ -5,6 +5,9 @@ Project overview and navigation hub.
 ## Product
 - [Product Definition](./product-definition.md) - Core value proposition and workflows
 
+## Security & Safety
+- [Runaway Process Protection](./runaway-process-protection.md) - Multi-layered process spawn protection and configuration
+
 ## Distribution & Release
 - [Releasing](./RELEASING.md) - npm publishing process and platform-specific binaries
 

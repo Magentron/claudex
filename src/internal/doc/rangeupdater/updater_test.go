@@ -1,6 +1,7 @@
 package rangeupdater
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -132,6 +133,14 @@ func (m *mockCommander) Run(name string, args ...string) ([]byte, error) {
 }
 
 func (m *mockCommander) Start(name string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
+	return nil
+}
+
+func (m *mockCommander) RunWithContext(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return m.Run(name, args...)
+}
+
+func (m *mockCommander) StartWithContext(ctx context.Context, name string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
 	return nil
 }
 

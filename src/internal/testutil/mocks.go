@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"context"
 	"io"
 	"strings"
 )
@@ -107,6 +108,16 @@ func (m *MockCommander) Start(name string, stdin io.Reader, stdout, stderr io.Wr
 	}
 
 	return nil
+}
+
+// RunWithContext executes command with context support (delegates to Run)
+func (m *MockCommander) RunWithContext(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return m.Run(name, args...)
+}
+
+// StartWithContext launches interactive command with context support (delegates to Start)
+func (m *MockCommander) StartWithContext(ctx context.Context, name string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
+	return m.Start(name, stdin, stdout, stderr, args...)
 }
 
 // LastInvocation returns the most recent command invocation

@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"errors"
 	"io"
 	"testing"
@@ -20,6 +21,14 @@ func (m *mockCommander) Run(name string, args ...string) ([]byte, error) {
 
 func (m *mockCommander) Start(name string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
 	return errors.New("Start not implemented in mock")
+}
+
+func (m *mockCommander) RunWithContext(ctx context.Context, name string, args ...string) ([]byte, error) {
+	return m.Run(name, args...)
+}
+
+func (m *mockCommander) StartWithContext(ctx context.Context, name string, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
+	return errors.New("StartWithContext not implemented in mock")
 }
 
 func TestGetCurrentSHA_Success(t *testing.T) {
