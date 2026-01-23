@@ -32,6 +32,12 @@ func NewHandler(fs afero.Fs, env env.Environment, updater doc.DocumentationUpdat
 // Handle triggers final documentation update when session ends.
 // Returns nil on success (no JSON output is needed for SessionEnd hooks).
 func (h *Handler) Handle(input *shared.SessionEndInput) error {
+	// Skip processing for internal Claude invocations (e.g., from doc-update subprocess)
+	// Only the main user session should trigger documentation updates
+	if h.env.Get("CLAUDE_HOOK_INTERNAL") == "1" {
+		return nil
+	}
+
 	_ = h.logger.LogInfo(fmt.Sprintf("Session ending: %s", input.Reason))
 
 	// Find session folder
