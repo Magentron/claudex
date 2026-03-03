@@ -378,3 +378,8 @@ func ShowSessionForked(originalName, newName string) {
 func ShowFreshMemory(originalName, newName string) {
 	fmt.Printf("\n\033[1;32m🔄 Fresh memory: %s → %s (original deleted)\033[0m\n", originalName, newName)
 }
+
+// ShowSessionEnded displays the session name after a successful session exit.
+func ShowSessionEnded(sessionName string) {
+	fmt.Printf("\n📦 Session: %s\n\n", sessionName)
+}
