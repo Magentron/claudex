@@ -60,6 +60,8 @@ func Test_Execute_CreatesStructure(t *testing.T) {
 	// Verify - agents copied from embedded profiles
 	testutil.AssertFileExists(t, h.FS, "/project/.claude/agents/team-lead.md")
 	testutil.AssertFileExists(t, h.FS, "/project/.claude/commands/agents/team-lead.md")
+	testutil.AssertFileExists(t, h.FS, "/project/.claude/agents/spec-engineer.md")
+	testutil.AssertFileExists(t, h.FS, "/project/.claude/commands/agents/spec-engineer.md")
 
 	// Verify - settings.local.json created with hook registrations
 	testutil.AssertFileExists(t, h.FS, "/project/.claude/settings.local.json")
