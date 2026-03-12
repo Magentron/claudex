@@ -2,9 +2,11 @@ sessions/
 *.log
 /.cache
 .claude/
+.claudex/
 !src/.claude/
 roadmap.md
 /claudex
+node_modules/
 playground/
 logs/
 src/claudex
@@ -16,4 +18,6 @@ dist/
 npm/@claudex/darwin-*/bin/
 npm/@claudex/linux-*/bin/
 *.tgz
-.claudex/
+
+# Cursor session data (ephemeral, per-user)
+.cursor/sessions/
